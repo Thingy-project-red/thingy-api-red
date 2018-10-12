@@ -1,0 +1,14 @@
+{
+  "name": "thingy-server",
+  "version": "0.0.1",
+  "description": "thingy service backend",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "various",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "mqtt": "^2.18.8"
+  }
+}
