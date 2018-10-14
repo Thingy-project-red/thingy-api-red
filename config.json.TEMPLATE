@@ -7,6 +7,9 @@
 		}
 	},
 	"thingy": {
+		"devices": {
+			"notice": "auto-populated since Uris are not constant"
+		},
 		"services": {
 			"ef680100-9b35-4933-9b10-52ffa9740042": "configuration",
 			"ef680200-9b35-4933-9b10-52ffa9740042": "environment",
@@ -31,6 +34,9 @@
 			"ef680301-9b35-4933-9b10-52ffa9740042": "led",
 			"ef680302-9b35-4933-9b10-52ffa9740042": "button",
 			"ef680303-9b35-4933-9b10-52ffa9740042": "303"
+		},
+		"UUIDS": {
+			"notice": "auto-generated from services & characteristics"
 		}
 	}
 }
