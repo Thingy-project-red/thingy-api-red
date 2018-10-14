@@ -1,9 +1,9 @@
 {
 	"mqtt": {
-		"host": "mqtt://",
+		"host": "mqtt://host:port",
 		"auth": {
-			"username": "",
-			"password": ""
+			"username": "user",
+			"password": "pass"
 		}
 	},
 	"thingy": {
