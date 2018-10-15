@@ -9,3 +9,9 @@ For reference, see: `config.json.TEMPLATE`
 
 ## Run
 `node .`
+
+## Check code with ESLint
+This project uses the
+[Airbnb JavaScript Style Guide](https://github.com/airbnb/javascript).
+Run `npm run eslint` to detect issues and `npm run eslint-fix` to fix those
+that are automatically fixable.
