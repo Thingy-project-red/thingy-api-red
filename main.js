@@ -11,7 +11,7 @@ const router = new Router();
 const sensorData = {
   lastLight: {},
   lastHumidity: 0,
-  lastTemp = {}
+  lastTemp: {}
 };
 
 /*
