@@ -8,7 +8,8 @@ Backend providing the thingy API
 For reference, see: `config.json.TEMPLATE`
 
 ## Run
-`node .`
+* `npm start` to run normally
+* `npm run start-debug` to see all debug messages
 
 ## Check code with ESLint
 This project uses the
