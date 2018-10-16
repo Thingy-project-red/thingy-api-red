@@ -10,7 +10,8 @@ const router = new Router();
  */
 const sensorData = {
   lastLight: {},
-  lastHumidity: 0
+  lastHumidity: 0,
+  lastTemp = {}
 };
 
 /*
@@ -30,16 +31,30 @@ mqtt.on('humidity', (data) => {
   sensorData.lastHumidity = data.readUInt8(0);
 });
 
+mqtt.on('temperature', (data) => {
+  sensorData.lastTemp = {
+    integer: data.readInt8(0),
+    decimal: data.readUInt8(1)
+  };
+});
+
 /*
  * API endpoints
  */
 
 async function getLight(ctx) {
+  ctx.status = 200;
   ctx.body = sensorData.lastLight;
 }
 
 async function getHumidity(ctx) {
+  ctx.status = 200;
   ctx.body = sensorData.lastHumidity;
+}
+
+async function getTemperature(ctx) {
+  ctx.status = 200;
+  ctx.body = sensorData.lastTemp;
 }
 
 /*
@@ -48,7 +63,8 @@ async function getHumidity(ctx) {
 
 router
   .get('/api/v1/light/latest', getLight)
-  .get('/api/v1/humidity/latest', getHumidity);
+  .get('/api/v1/humidity/latest', getHumidity)
+  .get('/api/v1/temperature/latest', getTemperature);
 
 app
   .use(router.routes())
