@@ -12,7 +12,8 @@ const router = new Router();
 const sensorData = {
   lastLight: {},
   lastHumidity: 0,
-  lastTemp: {}
+  lastTemp: {},
+  lastAirQuality: {}
 };
 
 /*
@@ -35,7 +36,15 @@ mqtt.on('humidity', (data) => {
 mqtt.on('temperature', (data) => {
   sensorData.lastTemp = {
     integer: data.readInt8(0),
-    decimal: data.readUInt8(1)
+    decimal: data.readUInt8(1),
+    temperature: data.readInt8(0) + (data.readUInt8(1)/100)
+  };
+});
+
+mqtt.on('air_quality', (data) => {
+  sensorData.lastAirQuality = {
+    eco2: data.readUInt16LE(0),
+    tvoc: data.readUInt16LE(2)
   };
 });
 
@@ -58,6 +67,11 @@ async function getTemperature(ctx) {
   ctx.body = sensorData.lastTemp;
 }
 
+async function getAirQuality(ctx) {
+  ctx.status = 200;
+  ctx.body = sensorData.lastAirQuality;
+}
+
 /*
  * Routes, middlewares, Node.js
  */
@@ -65,7 +79,8 @@ async function getTemperature(ctx) {
 router
   .get('/api/v1/light/latest', getLight)
   .get('/api/v1/humidity/latest', getHumidity)
-  .get('/api/v1/temperature/latest', getTemperature);
+  .get('/api/v1/temperature/latest', getTemperature)
+  .get('/api/v1/air_quality/latest', getAirQuality);
 
 app
   .use(router.routes())
