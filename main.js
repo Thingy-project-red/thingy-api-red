@@ -53,22 +53,18 @@ mqtt.on('air_quality', (data) => {
  */
 
 async function getLight(ctx) {
-  ctx.status = 200;
   ctx.body = sensorData.lastLight;
 }
 
 async function getHumidity(ctx) {
-  ctx.status = 200;
   ctx.body = sensorData.lastHumidity;
 }
 
 async function getTemperature(ctx) {
-  ctx.status = 200;
   ctx.body = sensorData.lastTemp;
 }
 
 async function getAirQuality(ctx) {
-  ctx.status = 200;
   ctx.body = sensorData.lastAirQuality;
 }
 
