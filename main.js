@@ -1,6 +1,7 @@
 const log = require('debug')('api');
 const Koa = require('koa');
 const Router = require('koa-router');
+const cors = require('@koa/cors');
 const mqtt = require('./mqtt.js').connect();
 
 const app = new Koa();
@@ -37,7 +38,7 @@ mqtt.on('temperature', (data) => {
   sensorData.lastTemp = {
     integer: data.readInt8(0),
     decimal: data.readUInt8(1),
-    temperature: data.readInt8(0) + (data.readUInt8(1)/100)
+    temperature: data.readInt8(0) + (data.readUInt8(1) / 100)
   };
 });
 
@@ -79,6 +80,7 @@ router
   .get('/api/v1/air_quality/latest', getAirQuality);
 
 app
+  .use(cors())
   .use(router.routes())
   .use(router.allowedMethods());
 

@@ -17,6 +17,7 @@
   "author": "various",
   "license": "UNLICENSED",
   "dependencies": {
+    "@koa/cors": "^2.2.2",
     "debug": "^4.1.0",
     "koa": "^2.5.3",
     "koa-router": "^7.4.0",
