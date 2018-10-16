@@ -1,3 +1,4 @@
+const log = require('debug')('api');
 const Koa = require('koa');
 const Router = require('koa-router');
 const mqtt = require('./mqtt.js').connect();
@@ -72,5 +73,5 @@ app
 
 const port = 8000;
 app.listen(port, () => {
-  console.log(`API:  ready and listening on port ${port}`);
+  log(`ready and listening on port ${port}`);
 });

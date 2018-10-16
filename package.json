@@ -5,6 +5,8 @@
   "main": "main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "DEBUG=mqtt,api node .",
+    "start-debug": "DEBUG=mqtt*,api node .",
     "eslint": "eslint **/*.js --ignore-pattern node_modules/",
     "eslint-fix": "eslint **/*.js --ignore-pattern node_modules/ --fix"
   },
@@ -15,6 +17,7 @@
   "author": "various",
   "license": "UNLICENSED",
   "dependencies": {
+    "debug": "^4.1.0",
     "koa": "^2.5.3",
     "koa-router": "^7.4.0",
     "mqtt": "^2.18.8"
