@@ -8,15 +8,17 @@ const router = new Router();
 /*
  * Global variables to store latest values of sensors until we have a DB
  */
-let lastLight = {};
-let lastHumidity = null;
+const sensorData = {
+  lastLight: {},
+  lastHumidity: 0
+};
 
 /*
  * MQTT handlers receiving and storing sensor data
  */
 
 mqtt.on('light_intensity', (data) => {
-  lastLight = {
+  sensorData.lastLight = {
     red: data.readUInt16LE(0),
     green: data.readUInt16LE(2),
     blue: data.readUInt16LE(4),
@@ -25,7 +27,7 @@ mqtt.on('light_intensity', (data) => {
 });
 
 mqtt.on('humidity', (data) => {
-  lastHumidity = data.readUInt8(0);
+  sensorData.lastHumidity = data.readUInt8(0);
 });
 
 /*
@@ -33,11 +35,11 @@ mqtt.on('humidity', (data) => {
  */
 
 async function getLight(ctx) {
-  ctx.body = JSON.stringify(lastLight);
+  ctx.body = sensorData.lastLight;
 }
 
 async function getHumidity(ctx) {
-  ctx.body = lastHumidity;
+  ctx.body = sensorData.lastHumidity;
 }
 
 /*
@@ -52,4 +54,7 @@ app
   .use(router.routes())
   .use(router.allowedMethods());
 
-app.listen(8000);
+const port = 8000;
+app.listen(port, () => {
+  console.log(`API:  ready and listening on port ${port}`);
+});
