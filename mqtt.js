@@ -7,8 +7,13 @@ const lookup = (obj, prop) => (prop in obj ? obj[prop] : prop);
 
 module.exports = {
   connect() {
-    log(`connecting to "${config.mqtt.host}"`);
-    const client = mqtt.connect(config.mqtt.host, config.mqtt.auth);
+    log(`connecting to "${process.env.MQTT_HOST}"`);
+    const client = mqtt.connect(
+      process.env.MQTT_HOST, {
+        username: process.env.MQTT_USERNAME,
+        password: process.env.MQTT_PASSWORD
+      }
+    );
 
     client.on('connect', () => {
       log('connected');
@@ -24,7 +29,7 @@ module.exports = {
     });
 
     client.on('error', () => {
-      log(`unable to connect to "${config.mqtt.host}"`);
+      log(`unable to connect to "${process.env.MQTT_HOST}"`);
     });
 
     client.on('message', (topic, message) => {

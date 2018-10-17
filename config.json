@@ -1,11 +1,4 @@
 {
-	"mqtt": {
-		"host": "mqtt://host:port",
-		"auth": {
-			"username": "user",
-			"password": "pass"
-		}
-	},
 	"thingy": {
 		"devices": {
 			"notice": "auto-populated since Uris are not constant"
