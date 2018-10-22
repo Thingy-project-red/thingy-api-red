@@ -112,7 +112,7 @@ async function getLight(ctx) {
 }
 
 async function getHumidity(ctx) {
-  const rows = await influx.query('SELECT * FROM humidity');
+  const rows = await influx.query('SELECT * FROM humidity ORDER BY time DESC LIMIT 1');
   ctx.body = rows;
 }
 
