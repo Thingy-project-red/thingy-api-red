@@ -5,6 +5,9 @@ const Router = require('koa-router');
 const cors = require('@koa/cors');
 const Influx = require('influx');
 const mqtt = require('./mqtt.js').connect();
+const json = require('koa-json')
+const bodyParser = require('koa-bodyparser');
+const logger = require('koa-logger');
 
 const app = new Koa();
 const router = new Router();
@@ -114,7 +117,7 @@ async function getHumidity(ctx) {
 }
 
 async function getTemperature(ctx) {
-  const rows = await influx.query('SELECT * FROM temperature');
+  const rows = await influx.query('SELECT * FROM temperature ORDER BY time DESC LIMIT 1');
   ctx.body = rows;
 }
 
@@ -134,7 +137,10 @@ router
   .get('/api/v1/air_quality', getAirQuality);
 
 app
+  .use(bodyParser())
   .use(cors())
+  .use(logger()) 
+  .use(json())
   .use(router.routes())
   .use(router.allowedMethods());
 
@@ -142,3 +148,5 @@ const port = 8000;
 app.listen(port, () => {
   log(`ready and listening on port ${port}`);
 });
+
+module.exports = app; 
