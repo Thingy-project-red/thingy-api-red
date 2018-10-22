@@ -107,7 +107,7 @@ mqtt.on('air_quality', async (data) => {
  */
 
 async function getLight(ctx) {
-  const rows = await influx.query('SELECT * FROM light_intensity');
+  const rows = await influx.query('SELECT * FROM light_intensity ORDER BY time DESC LIMIT 1');
   ctx.body = rows;
 }
 
