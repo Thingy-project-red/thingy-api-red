@@ -122,7 +122,7 @@ async function getTemperature(ctx) {
 }
 
 async function getAirQuality(ctx) {
-  const rows = await influx.query('SELECT * FROM air_quality');
+  const rows = await influx.query('SELECT * FROM air_quality ORDER BY time DESC LIMIT 1');
   ctx.body = rows;
 }
 
