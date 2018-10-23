@@ -4,10 +4,10 @@ const Koa = require('koa');
 const Router = require('koa-router');
 const cors = require('@koa/cors');
 const Influx = require('influx');
-const mqtt = require('./mqtt.js').connect();
-const json = require('koa-json')
+const json = require('koa-json');
 const bodyParser = require('koa-bodyparser');
 const logger = require('koa-logger');
+const mqtt = require('./mqtt.js').connect();
 
 const app = new Koa();
 const router = new Router();
@@ -54,6 +54,7 @@ const influx = new Influx.InfluxDB({
  * MQTT handlers receiving and storing sensor data
  */
 
+/* eslint-disable no-unused-vars */
 mqtt.on('light_intensity', async ({ data, device }) => {
   const light = {
     red: data.readUInt16LE(0),
@@ -101,6 +102,7 @@ mqtt.on('air_quality', async ({ data, device }) => {
     }
   ]);
 });
+/* eslint-enable no-unused-vars */
 
 /*
  * API endpoints
@@ -139,7 +141,7 @@ router
 app
   .use(bodyParser())
   .use(cors())
-  .use(logger()) 
+  .use(logger())
   .use(json())
   .use(router.routes())
   .use(router.allowedMethods());
@@ -149,4 +151,4 @@ app.listen(port, () => {
   log(`ready and listening on port ${port}`);
 });
 
-module.exports = app; 
+module.exports = app;
