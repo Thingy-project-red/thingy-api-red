@@ -122,27 +122,37 @@ mqtt.on('air_quality', async ({ data, device }) => {
  */
 
 async function getLight(ctx) {
-  const rows = await influx.query('SELECT * FROM light_intensity ORDER BY time DESC LIMIT 1');
+  const rows = await influx.query(
+    'SELECT * FROM light_intensity ORDER BY time DESC LIMIT 1'
+  );
   ctx.body = rows;
 }
 
 async function getDoor(ctx) {
-  const rows = await influx.query('SELECT * FROM door ORDER BY time DESC LIMIT 1');
+  const rows = await influx.query(
+    'SELECT * FROM door ORDER BY time DESC LIMIT 1'
+  );
   ctx.body = rows;
 }
 
 async function getHumidity(ctx) {
-  const rows = await influx.query('SELECT * FROM humidity ORDER BY time DESC LIMIT 1');
+  const rows = await influx.query(
+    'SELECT * FROM humidity ORDER BY time DESC LIMIT 1'
+  );
   ctx.body = rows;
 }
 
 async function getTemperature(ctx) {
-  const rows = await influx.query('SELECT * FROM temperature ORDER BY time DESC LIMIT 1');
+  const rows = await influx.query(
+    'SELECT * FROM temperature ORDER BY time DESC LIMIT 1'
+  );
   ctx.body = rows;
 }
 
 async function getAirQuality(ctx) {
-  const rows = await influx.query('SELECT * FROM air_quality ORDER BY time DESC LIMIT 1');
+  const rows = await influx.query(
+    'SELECT * FROM air_quality ORDER BY time DESC LIMIT 1'
+  );
   ctx.body = rows;
 }
 
