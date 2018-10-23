@@ -5,6 +5,12 @@ const config = require('./config.js');
 
 const lookup = (obj, prop) => (prop in obj ? obj[prop] : prop);
 
+const requestName = (client, deviceUri) => {
+  const confUUID = config.thingy.UUIDS.configuration;
+  const nameUUID = config.thingy.UUIDS.name;
+  client.publish(`${deviceUri}/${confUUID}/${nameUUID}/read`);
+};
+
 module.exports = {
   connect() {
     log(`connecting to "${process.env.MQTT_HOST}"`);
@@ -40,13 +46,6 @@ module.exports = {
         const connected = message.toString() === 'true';
         const device = lookup(config.thingy.devices, deviceUri);
         debug(`${device} ${connected ? '' : 'dis'}connected`);
-
-        // ask for name of newly connected, unknown thingy
-        if (connected && device === deviceUri) {
-          const confUUID = config.thingy.UUIDS.configuration;
-          const nameUUID = config.thingy.UUIDS.name;
-          client.publish(`${deviceUri}/${confUUID}/${nameUUID}/read`);
-        }
         return;
       }
 
@@ -62,8 +61,14 @@ module.exports = {
       const characteristic = lookup(config.thingy.characteristics, charUUID);
       const friendlyTopic = `${device}/${service}/${characteristic}`;
 
+      // ask for name of unknown thingy
+      if (device === deviceUri) {
+        requestName(client, deviceUri);
+        return;
+      }
+
       debug(`MQTT#${friendlyTopic}: ${message.toString('hex')}`);
-      client.emit(characteristic, message);
+      client.emit(characteristic, { data: message, device });
     });
 
     return client;

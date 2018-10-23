@@ -54,7 +54,7 @@ const influx = new Influx.InfluxDB({
  * MQTT handlers receiving and storing sensor data
  */
 
-mqtt.on('light_intensity', async (data) => {
+mqtt.on('light_intensity', async ({ data, device }) => {
   const light = {
     red: data.readUInt16LE(0),
     green: data.readUInt16LE(2),
@@ -69,7 +69,7 @@ mqtt.on('light_intensity', async (data) => {
   ]);
 });
 
-mqtt.on('humidity', async (data) => {
+mqtt.on('humidity', async ({ data, device }) => {
   const humidity = data.readUInt8(0);
   await influx.writePoints([
     {
@@ -79,7 +79,7 @@ mqtt.on('humidity', async (data) => {
   ]);
 });
 
-mqtt.on('temperature', async (data) => {
+mqtt.on('temperature', async ({ data, device }) => {
   const temperature = data.readInt8(0) + (data.readUInt8(1) / 100);
   await influx.writePoints([
     {
@@ -89,7 +89,7 @@ mqtt.on('temperature', async (data) => {
   ]);
 });
 
-mqtt.on('air_quality', async (data) => {
+mqtt.on('air_quality', async ({ data, device }) => {
   const airQuality = {
     eco2: data.readUInt16LE(0),
     tvoc: data.readUInt16LE(2)
