@@ -8,6 +8,7 @@ const json = require('koa-json');
 const bodyParser = require('koa-bodyparser');
 const logger = require('koa-logger');
 const mqtt = require('./mqtt.js').connect();
+const util = require('./util.js');
 
 const app = new Koa();
 const router = new Router();
@@ -22,6 +23,13 @@ const influx = new Influx.InfluxDB({
         green: Influx.FieldType.INTEGER,
         blue: Influx.FieldType.INTEGER,
         clear: Influx.FieldType.INTEGER
+      },
+      tags: []
+    },
+    {
+      measurement: 'door',
+      fields: {
+        open: Influx.FieldType.BOOLEAN
       },
       tags: []
     },
@@ -62,10 +70,15 @@ mqtt.on('light_intensity', async ({ data, device }) => {
     blue: data.readUInt16LE(4),
     clear: data.readUInt16LE(6)
   };
+  const open = util.isDoorOpen(light);
   await influx.writePoints([
     {
       measurement: 'light_intensity',
-      fields: light,
+      fields: light
+    },
+    {
+      measurement: 'door',
+      fields: { open }
     }
   ]);
 });
@@ -113,6 +126,11 @@ async function getLight(ctx) {
   ctx.body = rows;
 }
 
+async function getDoor(ctx) {
+  const rows = await influx.query('SELECT * FROM door ORDER BY time DESC LIMIT 1');
+  ctx.body = rows;
+}
+
 async function getHumidity(ctx) {
   const rows = await influx.query('SELECT * FROM humidity ORDER BY time DESC LIMIT 1');
   ctx.body = rows;
@@ -134,6 +152,7 @@ async function getAirQuality(ctx) {
 
 router
   .get('/api/v1/light', getLight)
+  .get('/api/v1/door', getDoor)
   .get('/api/v1/humidity', getHumidity)
   .get('/api/v1/temperature', getTemperature)
   .get('/api/v1/air_quality', getAirQuality);
