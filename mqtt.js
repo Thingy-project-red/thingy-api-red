@@ -5,10 +5,13 @@ const config = require('./config.js');
 
 const lookup = (obj, prop) => (prop in obj ? obj[prop] : prop);
 
-const requestName = (client, deviceUri) => {
-  const confUUID = config.thingy.UUIDS.configuration;
-  const nameUUID = config.thingy.UUIDS.name;
-  client.publish(`${deviceUri}/${confUUID}/${nameUUID}/read`);
+// battery value needs to be read periodically
+const setupBatteryCheck = (client) => {
+  setInterval(() => {
+    Object.values(config.thingy.devices).forEach((device) => {
+      client.read(device, 'battery', 'battery_level');
+    });
+  }, 5000, client);
 };
 
 module.exports = {
@@ -30,6 +33,7 @@ module.exports = {
           log(`error trying to subscribe to ${subjson}`);
         } else {
           log(`subscribed to ${subjson}`);
+          setupBatteryCheck(client);
         }
       });
     });
@@ -53,6 +57,7 @@ module.exports = {
       if (charUUID === config.thingy.UUIDS.name) {
         const name = message.toString();
         config.thingy.devices[deviceUri] = name;
+        config.thingy.IDS[name] = deviceUri;
         debug(`${deviceUri} refers to ${name}`);
       }
 
@@ -63,13 +68,27 @@ module.exports = {
 
       // ask for name of unknown thingy
       if (device === deviceUri) {
-        requestName(client, deviceUri);
+        client.read(device, 'configuration', 'name');
         return;
       }
 
       debug(`MQTT#${friendlyTopic}: ${message.toString('hex')}`);
       client.emit(characteristic, { data: message, device });
     });
+
+    client.read = (device, service, characteristic) => {
+      const deviceUri = lookup(config.thingy.IDS, device);
+      const serviceUUID = config.thingy.UUIDS[service];
+      const charUUID = config.thingy.UUIDS[characteristic];
+      client.publish(`${deviceUri}/${serviceUUID}/${charUUID}/read`);
+    };
+
+    client.write = (device, service, characteristic, data) => {
+      const deviceUri = lookup(config.thingy.IDS, device);
+      const serviceUUID = config.thingy.UUIDS[service];
+      const charUUID = config.thingy.UUIDS[characteristic];
+      client.publish(`${deviceUri}/${serviceUUID}/${charUUID}/write`, data);
+    };
 
     return client;
   }

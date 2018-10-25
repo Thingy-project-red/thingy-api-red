@@ -54,6 +54,13 @@ const influx = new Influx.InfluxDB({
         tvoc: Influx.FieldType.INTEGER
       },
       tags: []
+    },
+    {
+      measurement: 'battery_level',
+      fields: {
+        battery_level: Influx.FieldType.INTEGER
+      },
+      tags: []
     }
   ]
 });
@@ -115,6 +122,16 @@ mqtt.on('air_quality', async ({ data, device }) => {
     }
   ]);
 });
+
+mqtt.on('battery_level', async ({ data, device }) => {
+  const batteryLevel = data.readUInt8(0);
+  await influx.writePoints([
+    {
+      measurement: 'battery_level',
+      fields: { battery_level: batteryLevel }
+    }
+  ]);
+});
 /* eslint-enable no-unused-vars */
 
 /*
@@ -156,6 +173,13 @@ async function getAirQuality(ctx) {
   ctx.body = rows;
 }
 
+async function getBatteryLevel(ctx) {
+  const rows = await influx.query(
+    'SELECT * FROM battery_level ORDER BY time DESC LIMIT 1'
+  );
+  ctx.body = rows;
+}
+
 /*
  * Routes, middlewares, Node.js
  */
@@ -165,7 +189,8 @@ router
   .get('/api/v1/door', getDoor)
   .get('/api/v1/humidity', getHumidity)
   .get('/api/v1/temperature', getTemperature)
-  .get('/api/v1/air_quality', getAirQuality);
+  .get('/api/v1/air_quality', getAirQuality)
+  .get('/api/v1/battery_level', getBatteryLevel);
 
 app
   .use(bodyParser())
