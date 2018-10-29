@@ -136,8 +136,8 @@ mqtt.on('battery_level', async ({ data, device }) => {
 /* eslint-enable no-unused-vars */
 
 /*
- * Middleware that determines the time range of the query and constructs the
- * tail end of the query string based on that.
+ * Middleware that determines the time range of the request and constructs
+ * parts of the InfluxDB query based on that.
  */
 
 async function timeSelector(ctx, next) {
@@ -160,11 +160,13 @@ async function timeSelector(ctx, next) {
   }
 
   if (conditions.length > 0) {
-    // We have at least one time condition, build query accordingly
+    // We have at least one time condition, select all fields in time range
+    ctx.fieldSelection = '*';
     ctx.timeSelection = `WHERE ${conditions.join(' AND ')} ORDER BY time`;
   } else {
-    // No time condition, select most recent value
-    ctx.timeSelection = 'ORDER BY time DESC LIMIT 1';
+    // No time condition, select fields of last (most recent) value
+    ctx.fieldSelection = 'LAST(*)';
+    ctx.timeSelection = '';
   }
 
   await next();
@@ -176,42 +178,42 @@ async function timeSelector(ctx, next) {
 
 async function getLight(ctx) {
   const rows = await influx.query(
-    `SELECT * FROM light_intensity ${ctx.timeSelection}`
+    `SELECT ${ctx.fieldSelection} FROM light_intensity ${ctx.timeSelection}`
   );
   ctx.body = rows;
 }
 
 async function getDoor(ctx) {
   const rows = await influx.query(
-    `SELECT * FROM door ${ctx.timeSelection}`
+    `SELECT ${ctx.fieldSelection} FROM door ${ctx.timeSelection}`
   );
   ctx.body = rows;
 }
 
 async function getHumidity(ctx) {
   const rows = await influx.query(
-    `SELECT * FROM humidity ${ctx.timeSelection}`
+    `SELECT ${ctx.fieldSelection} FROM humidity ${ctx.timeSelection}`
   );
   ctx.body = rows;
 }
 
 async function getTemperature(ctx) {
   const rows = await influx.query(
-    `SELECT * FROM temperature ${ctx.timeSelection}`
+    `SELECT ${ctx.fieldSelection} FROM temperature ${ctx.timeSelection}`
   );
   ctx.body = rows;
 }
 
 async function getAirQuality(ctx) {
   const rows = await influx.query(
-    `SELECT * FROM air_quality ${ctx.timeSelection}`
+    `SELECT ${ctx.fieldSelection} FROM air_quality ${ctx.timeSelection}`
   );
   ctx.body = rows;
 }
 
 async function getBatteryLevel(ctx) {
   const rows = await influx.query(
-    `SELECT * FROM battery_level ${ctx.timeSelection}`
+    `SELECT ${ctx.fieldSelection} FROM battery_level ${ctx.timeSelection}`
   );
   ctx.body = rows;
 }
