@@ -7,6 +7,7 @@ const Influx = require('influx');
 const json = require('koa-json');
 const bodyParser = require('koa-bodyparser');
 const logger = require('koa-logger');
+const validate = require('vali-date');
 const mqtt = require('./mqtt.js').connect();
 const util = require('./util.js');
 
@@ -135,47 +136,82 @@ mqtt.on('battery_level', async ({ data, device }) => {
 /* eslint-enable no-unused-vars */
 
 /*
+ * Middleware that determines the time range of the query and constructs the
+ * tail end of the query string based on that.
+ */
+
+async function timeSelector(ctx, next) {
+  // Array to collect time conditions
+  const conditions = [];
+
+  // If present, validate 'from' condition and add to query
+  if ('from' in ctx.query) {
+    if (!validate(ctx.query.from)) {
+      ctx.throw(400, 'Invalid datetime');
+    }
+    conditions.push(`time >= '${ctx.query.from}'`);
+  }
+  // If present, validate 'to' condition and add to query
+  if ('to' in ctx.query) {
+    if (!validate(ctx.query.to)) {
+      ctx.throw(400, 'Invalid datetime');
+    }
+    conditions.push(`time < '${ctx.query.to}'`);
+  }
+
+  if (conditions.length > 0) {
+    // We have at least one time condition, build query accordingly
+    ctx.timeSelection = `WHERE ${conditions.join(' AND ')} ORDER BY time`;
+  } else {
+    // No time condition, select most recent value
+    ctx.timeSelection = 'ORDER BY time DESC LIMIT 1';
+  }
+
+  await next();
+}
+
+/*
  * API endpoints
  */
 
 async function getLight(ctx) {
   const rows = await influx.query(
-    'SELECT * FROM light_intensity ORDER BY time DESC LIMIT 1'
+    `SELECT * FROM light_intensity ${ctx.timeSelection}`
   );
   ctx.body = rows;
 }
 
 async function getDoor(ctx) {
   const rows = await influx.query(
-    'SELECT * FROM door ORDER BY time DESC LIMIT 1'
+    `SELECT * FROM door ${ctx.timeSelection}`
   );
   ctx.body = rows;
 }
 
 async function getHumidity(ctx) {
   const rows = await influx.query(
-    'SELECT * FROM humidity ORDER BY time DESC LIMIT 1'
+    `SELECT * FROM humidity ${ctx.timeSelection}`
   );
   ctx.body = rows;
 }
 
 async function getTemperature(ctx) {
   const rows = await influx.query(
-    'SELECT * FROM temperature ORDER BY time DESC LIMIT 1'
+    `SELECT * FROM temperature ${ctx.timeSelection}`
   );
   ctx.body = rows;
 }
 
 async function getAirQuality(ctx) {
   const rows = await influx.query(
-    'SELECT * FROM air_quality ORDER BY time DESC LIMIT 1'
+    `SELECT * FROM air_quality ${ctx.timeSelection}`
   );
   ctx.body = rows;
 }
 
 async function getBatteryLevel(ctx) {
   const rows = await influx.query(
-    'SELECT * FROM battery_level ORDER BY time DESC LIMIT 1'
+    `SELECT * FROM battery_level ${ctx.timeSelection}`
   );
   ctx.body = rows;
 }
@@ -197,6 +233,7 @@ app
   .use(cors())
   .use(logger())
   .use(json())
+  .use(timeSelector)
   .use(router.routes())
   .use(router.allowedMethods());
 
