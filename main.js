@@ -203,6 +203,16 @@ async function getMetric(ctx) {
     WHERE device='${device}' ${ctx.timeSelection}`
   );
 
+  // keep values consistent, remove 'last_...' when selecting last value
+  if (rows.length === 1 && ctx.fieldSelection === 'LAST(*)') {
+    const data = rows[0];
+    Object.keys(data).forEach((key) => {
+      if (key.startsWith('last_')) {
+        data[key.substr(5)] = data[key];
+        delete data[key];
+      }
+    });
+  }
   ctx.body = rows;
 }
 
