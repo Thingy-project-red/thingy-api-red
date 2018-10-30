@@ -25,28 +25,28 @@ const influx = new Influx.InfluxDB({
         blue: Influx.FieldType.INTEGER,
         clear: Influx.FieldType.INTEGER
       },
-      tags: []
+      tags: ['device']
     },
     {
       measurement: 'door',
       fields: {
         open: Influx.FieldType.BOOLEAN
       },
-      tags: []
+      tags: ['device']
     },
     {
       measurement: 'humidity',
       fields: {
         humidity: Influx.FieldType.INTEGER
       },
-      tags: []
+      tags: ['device']
     },
     {
       measurement: 'temperature',
       fields: {
         temperature: Influx.FieldType.FLOAT
       },
-      tags: []
+      tags: ['device']
     },
     {
       measurement: 'air_quality',
@@ -54,14 +54,14 @@ const influx = new Influx.InfluxDB({
         eco2: Influx.FieldType.INTEGER,
         tvoc: Influx.FieldType.INTEGER
       },
-      tags: []
+      tags: ['device']
     },
     {
       measurement: 'battery_level',
       fields: {
         battery_level: Influx.FieldType.INTEGER
       },
-      tags: []
+      tags: ['device']
     }
   ]
 });
@@ -70,7 +70,6 @@ const influx = new Influx.InfluxDB({
  * MQTT handlers receiving and storing sensor data
  */
 
-/* eslint-disable no-unused-vars */
 mqtt.on('light_intensity', async ({ data, device }) => {
   const light = {
     red: data.readUInt16LE(0),
@@ -82,11 +81,13 @@ mqtt.on('light_intensity', async ({ data, device }) => {
   await influx.writePoints([
     {
       measurement: 'light_intensity',
-      fields: light
+      fields: light,
+      tags: { device }
     },
     {
       measurement: 'door',
-      fields: { open }
+      fields: { open },
+      tags: { device }
     }
   ]);
 });
@@ -96,7 +97,8 @@ mqtt.on('humidity', async ({ data, device }) => {
   await influx.writePoints([
     {
       measurement: 'humidity',
-      fields: { humidity }
+      fields: { humidity },
+      tags: { device }
     }
   ]);
 });
@@ -106,7 +108,8 @@ mqtt.on('temperature', async ({ data, device }) => {
   await influx.writePoints([
     {
       measurement: 'temperature',
-      fields: { temperature }
+      fields: { temperature },
+      tags: { device }
     }
   ]);
 });
@@ -119,7 +122,8 @@ mqtt.on('air_quality', async ({ data, device }) => {
   await influx.writePoints([
     {
       measurement: 'air_quality',
-      fields: airQuality
+      fields: airQuality,
+      tags: { device }
     }
   ]);
 });
@@ -129,11 +133,11 @@ mqtt.on('battery_level', async ({ data, device }) => {
   await influx.writePoints([
     {
       measurement: 'battery_level',
-      fields: { battery_level: batteryLevel }
+      fields: { battery_level: batteryLevel },
+      tags: { device }
     }
   ]);
 });
-/* eslint-enable no-unused-vars */
 
 /*
  * Middleware that determines the time range of the request and constructs
