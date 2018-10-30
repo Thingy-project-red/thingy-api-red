@@ -180,45 +180,27 @@ async function timeSelector(ctx, next) {
  * API endpoints
  */
 
-async function getLight(ctx) {
-  const rows = await influx.query(
-    `SELECT ${ctx.fieldSelection} FROM light_intensity ${ctx.timeSelection}`
-  );
-  ctx.body = rows;
-}
+const metrics = [
+  'light_intensity',
+  'door',
+  'humidity',
+  'temperature',
+  'air_quality',
+  'battery_level'
+];
 
-async function getDoor(ctx) {
-  const rows = await influx.query(
-    `SELECT ${ctx.fieldSelection} FROM door ${ctx.timeSelection}`
-  );
-  ctx.body = rows;
-}
+async function getMetric(ctx) {
+  const { metric } = ctx.params;
 
-async function getHumidity(ctx) {
-  const rows = await influx.query(
-    `SELECT ${ctx.fieldSelection} FROM humidity ${ctx.timeSelection}`
-  );
-  ctx.body = rows;
-}
+  // check if queried metric is valid
+  if (!metrics.includes(metric)) {
+    ctx.throw(404, 'Invalid metric');
+  }
 
-async function getTemperature(ctx) {
   const rows = await influx.query(
-    `SELECT ${ctx.fieldSelection} FROM temperature ${ctx.timeSelection}`
+    `SELECT ${ctx.fieldSelection} FROM ${metric} ${ctx.timeSelection}`
   );
-  ctx.body = rows;
-}
 
-async function getAirQuality(ctx) {
-  const rows = await influx.query(
-    `SELECT ${ctx.fieldSelection} FROM air_quality ${ctx.timeSelection}`
-  );
-  ctx.body = rows;
-}
-
-async function getBatteryLevel(ctx) {
-  const rows = await influx.query(
-    `SELECT ${ctx.fieldSelection} FROM battery_level ${ctx.timeSelection}`
-  );
   ctx.body = rows;
 }
 
@@ -227,12 +209,7 @@ async function getBatteryLevel(ctx) {
  */
 
 router
-  .get('/api/v1/light', getLight)
-  .get('/api/v1/door', getDoor)
-  .get('/api/v1/humidity', getHumidity)
-  .get('/api/v1/temperature', getTemperature)
-  .get('/api/v1/air_quality', getAirQuality)
-  .get('/api/v1/battery_level', getBatteryLevel);
+  .get('/api/v1/:metric', getMetric);
 
 app
   .use(bodyParser())
