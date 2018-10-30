@@ -166,7 +166,7 @@ async function timeSelector(ctx, next) {
   if (conditions.length > 0) {
     // We have at least one time condition, select all fields in time range
     ctx.fieldSelection = '*';
-    ctx.timeSelection = `WHERE ${conditions.join(' AND ')} ORDER BY time`;
+    ctx.timeSelection = `AND ${conditions.join(' AND ')} ORDER BY time`;
   } else {
     // No time condition, select fields of last (most recent) value
     ctx.fieldSelection = 'LAST(*)';
@@ -197,8 +197,10 @@ async function getMetric(ctx) {
     ctx.throw(404, 'Invalid metric');
   }
 
+  const device = Influx.escape.tag(ctx.params.device);
   const rows = await influx.query(
-    `SELECT ${ctx.fieldSelection} FROM ${metric} ${ctx.timeSelection}`
+    `SELECT ${ctx.fieldSelection} FROM ${metric}
+    WHERE device='${device}' ${ctx.timeSelection}`
   );
 
   ctx.body = rows;
@@ -209,7 +211,7 @@ async function getMetric(ctx) {
  */
 
 router
-  .get('/api/v1/:metric', getMetric);
+  .get('/api/v1/:device/:metric', getMetric);
 
 app
   .use(bodyParser())
