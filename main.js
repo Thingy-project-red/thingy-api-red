@@ -169,7 +169,7 @@ async function getMetricSeconds(ctx) {
   const device = Influx.escape.tag(ctx.params.device);
   const rows = await influx.query(
     `SELECT * FROM ${metric}
-    WHERE device='${device}' AND time > now() - ${seconds}s`
+    WHERE device='${device}' AND time > now() - ${seconds}s ORDER BY time`
   );
 
   ctx.body = rows;
