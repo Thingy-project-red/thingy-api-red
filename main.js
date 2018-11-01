@@ -140,43 +140,6 @@ mqtt.on('battery_level', async ({ data, device }) => {
 });
 
 /*
- * Middleware that determines the time range of the request and constructs
- * parts of the InfluxDB query based on that.
- */
-
-async function timeSelector(ctx, next) {
-  // Array to collect time conditions
-  const conditions = [];
-
-  // If present, validate 'from' condition and add to query
-  if ('from' in ctx.query) {
-    if (!validate(ctx.query.from)) {
-      ctx.throw(400, 'Invalid datetime');
-    }
-    conditions.push(`time >= '${ctx.query.from}'`);
-  }
-  // If present, validate 'to' condition and add to query
-  if ('to' in ctx.query) {
-    if (!validate(ctx.query.to)) {
-      ctx.throw(400, 'Invalid datetime');
-    }
-    conditions.push(`time < '${ctx.query.to}'`);
-  }
-
-  if (conditions.length > 0) {
-    // We have at least one time condition, select all fields in time range
-    ctx.fieldSelection = '*';
-    ctx.timeSelection = `AND ${conditions.join(' AND ')} ORDER BY time`;
-  } else {
-    // No time condition, select fields of last (most recent) value
-    ctx.fieldSelection = 'LAST(*)';
-    ctx.timeSelection = '';
-  }
-
-  await next();
-}
-
-/*
  * API endpoints
  */
 
@@ -213,17 +176,41 @@ async function getMetricSeconds(ctx) {
 }
 
 async function getMetric(ctx) {
-  const { metric } = ctx.params;
-
   // check if queried metric is valid
+  const { metric } = ctx.params;
   if (!metrics.includes(metric)) {
     ctx.throw(404, 'Invalid metric');
   }
 
+  // Determine time range if any of the parameters were given
+  let fieldSelection = 'LAST(*)';
+  let timeSelection = '';
+  // Array to collect time conditions
+  const conditions = [];
+  // If present, validate 'from' condition and add to query
+  if ('from' in ctx.query) {
+    if (!validate(ctx.query.from)) {
+      ctx.throw(400, 'Invalid datetime');
+    }
+    conditions.push(`time >= '${ctx.query.from}'`);
+  }
+  // If present, validate 'to' condition and add to query
+  if ('to' in ctx.query) {
+    if (!validate(ctx.query.to)) {
+      ctx.throw(400, 'Invalid datetime');
+    }
+    conditions.push(`time < '${ctx.query.to}'`);
+  }
+  if (conditions.length > 0) {
+    // We have at least one time condition, select all fields in time range
+    fieldSelection = '*';
+    timeSelection = `AND ${conditions.join(' AND ')} ORDER BY time`;
+  }
+
   const device = Influx.escape.tag(ctx.params.device);
   const rows = await influx.query(
-    `SELECT ${ctx.fieldSelection} FROM ${metric}
-    WHERE device='${device}' ${ctx.timeSelection}`
+    `SELECT ${fieldSelection} FROM ${metric}
+    WHERE device='${device}' ${timeSelection}`
   );
 
   // keep values consistent, remove 'last_...' when selecting last value
@@ -260,7 +247,6 @@ app
   .use(cors())
   .use(logger())
   .use(json())
-  .use(timeSelector)
   .use(router.routes())
   .use(router.allowedMethods());
 
