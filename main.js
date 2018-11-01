@@ -216,11 +216,19 @@ async function getMetric(ctx) {
   ctx.body = rows;
 }
 
+async function getDevices(ctx) {
+  const rows = await influx.query(
+    'SHOW TAG VALUES FROM temperature WITH KEY IN ("device");'
+  );
+  ctx.body = rows.map(obj => obj.value);
+}
+
 /*
  * Routes, middlewares, Node.js
  */
 
 router
+  .get('/api/v1/devices', getDevices)
   .get('/api/v1/:device/:metric', getMetric);
 
 app
