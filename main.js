@@ -189,6 +189,29 @@ const metrics = [
   'battery_level'
 ];
 
+async function getMetricSeconds(ctx) {
+  // Parse seconds to make sure we work with a valid number
+  const seconds = parseInt(ctx.params.seconds, 10);
+  if (Number.isNaN(seconds)) {
+    ctx.throw(400, 'Invalid number');
+  }
+
+  // Check if queried metric is valid
+  const { metric } = ctx.params;
+  if (!metrics.includes(metric)) {
+    ctx.throw(404, 'Invalid metric');
+  }
+
+  // Get measurements going back the given amount of seconds
+  const device = Influx.escape.tag(ctx.params.device);
+  const rows = await influx.query(
+    `SELECT * FROM ${metric}
+    WHERE device='${device}' AND time > now() - ${seconds}s`
+  );
+
+  ctx.body = rows;
+}
+
 async function getMetric(ctx) {
   const { metric } = ctx.params;
 
@@ -229,6 +252,7 @@ async function getDevices(ctx) {
 
 router
   .get('/api/v1/devices', getDevices)
+  .get('/api/v1/:device/:metric/:seconds', getMetricSeconds)
   .get('/api/v1/:device/:metric', getMetric);
 
 app
