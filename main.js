@@ -13,7 +13,7 @@ const util = require('./util.js');
 
 const app = new Koa();
 const router = new Router();
-const influx = new Influx.InfluxDB({
+const influxConfig = {
   host: 'db',
   database: process.env.INFLUXDB_DB,
   schema: [
@@ -64,7 +64,8 @@ const influx = new Influx.InfluxDB({
       tags: ['device']
     }
   ]
-});
+};
+const influx = new Influx.InfluxDB(influxConfig);
 
 /*
  * MQTT handlers receiving and storing sensor data
@@ -181,48 +182,59 @@ async function getMetric(ctx) {
   if (!metrics.includes(metric)) {
     ctx.throw(404, 'Invalid metric');
   }
-
-  // Determine time range if any of the parameters were given
-  let fieldSelection = 'LAST(*)';
-  let timeSelection = '';
-  // Array to collect time conditions
-  const conditions = [];
-  // If present, validate 'from' condition and add to query
-  if ('from' in ctx.query) {
-    if (!validate(ctx.query.from)) {
-      ctx.throw(400, 'Invalid datetime');
-    }
-    conditions.push(`time >= '${ctx.query.from}'`);
-  }
-  // If present, validate 'to' condition and add to query
-  if ('to' in ctx.query) {
-    if (!validate(ctx.query.to)) {
-      ctx.throw(400, 'Invalid datetime');
-    }
-    conditions.push(`time < '${ctx.query.to}'`);
-  }
-  if (conditions.length > 0) {
-    // We have at least one time condition, select all fields in time range
-    fieldSelection = '*';
-    timeSelection = `AND ${conditions.join(' AND ')} ORDER BY time`;
-  }
-
+  // Determine device
   const device = Influx.escape.tag(ctx.params.device);
-  const rows = await influx.query(
-    `SELECT ${fieldSelection} FROM ${metric}
-    WHERE device='${device}' ${timeSelection}`
-  );
+  // Results will be stored in and returned from here
+  let rows;
 
-  // keep values consistent, remove 'last_...' when selecting last value
-  if (rows.length === 1 && ctx.fieldSelection === 'LAST(*)') {
-    const data = rows[0];
-    Object.keys(data).forEach((key) => {
-      if (key.startsWith('last_')) {
-        data[key.substr(5)] = data[key];
-        delete data[key];
+  if ('from' in ctx.query || 'to' in ctx.query) {
+    // If a 'from' or 'to' parameter was given, do a time range query
+
+    // Array to collect time conditions
+    const conditions = [];
+    // If present, validate 'from' condition and add to query
+    if ('from' in ctx.query) {
+      if (!validate(ctx.query.from)) {
+        ctx.throw(400, 'Invalid datetime');
       }
-    });
+      conditions.push(`time >= '${ctx.query.from}'`);
+    }
+    // If present, validate 'to' condition and add to query
+    if ('to' in ctx.query) {
+      if (!validate(ctx.query.to)) {
+        ctx.throw(400, 'Invalid datetime');
+      }
+      conditions.push(`time < '${ctx.query.to}'`);
+    }
+
+    // Build query depending on whether we have one or two parameters
+    const timeSelection = `${conditions.join(' AND ')}`;
+    // Execute time range query
+    rows = await influx.query(
+      `SELECT * FROM ${metric}
+      WHERE device='${device}' AND ${timeSelection}
+      ORDER BY time`
+    );
+  } else {
+    // If no time range was given, return the latest measurement
+
+    // To get measurements with the correct timestamp from InfluxDB's LAST()
+    // selector, we need to supply it with a specific field of the
+    // measurement we're interested in (just * won't do). That's why we need
+    // to select one from the schema of our measurement.
+    // First, find the schema of our metric...
+    const schema = influxConfig.schema.find(obj => obj.measurement === metric);
+    // ...then select the first field
+    const [field] = Object.keys(schema.fields);
+
+    // Execute query
+    rows = await influx.query(
+      `SELECT LAST(${field}),* FROM ${metric} WHERE device='${device}'`
+    );
+    // Remove the automatically added 'last' property which is a duplicate
+    delete rows[0].last;
   }
+
   ctx.body = rows;
 }
 
