@@ -1,6 +1,5 @@
 # Credentials
-config.json
-
+.env
 
 # Logs
 logs

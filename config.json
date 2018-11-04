@@ -1,19 +1,16 @@
 {
-	"mqtt": {
-		"host": "mqtt://host:port",
-		"auth": {
-			"username": "user",
-			"password": "pass"
-		}
-	},
 	"thingy": {
 		"devices": {
 			"notice": "auto-populated since Uris are not constant"
 		},
+		"IDS": {
+			"notice": "auto-generated from devices"
+		},
 		"services": {
 			"ef680100-9b35-4933-9b10-52ffa9740042": "configuration",
 			"ef680200-9b35-4933-9b10-52ffa9740042": "environment",
-			"ef680300-9b35-4933-9b10-52ffa9740042": "user_interface"
+			"ef680300-9b35-4933-9b10-52ffa9740042": "user_interface",
+			"0000180f-0000-1000-8000-00805f9b34fb": "battery"
 		},
 		"characteristics": {
 			"ef680101-9b35-4933-9b10-52ffa9740042": "name",
@@ -33,7 +30,9 @@
 
 			"ef680301-9b35-4933-9b10-52ffa9740042": "led",
 			"ef680302-9b35-4933-9b10-52ffa9740042": "button",
-			"ef680303-9b35-4933-9b10-52ffa9740042": "303"
+			"ef680303-9b35-4933-9b10-52ffa9740042": "303",
+
+			"00002a19-0000-1000-8000-00805f9b34fb": "battery_level"
 		},
 		"UUIDS": {
 			"notice": "auto-generated from services & characteristics"

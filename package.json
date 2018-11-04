@@ -5,6 +5,8 @@
   "main": "main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "DEBUG=mqtt,api node .",
+    "start-debug": "DEBUG=mqtt*,api node .",
     "eslint": "eslint **/*.js --ignore-pattern node_modules/",
     "eslint-fix": "eslint **/*.js --ignore-pattern node_modules/ --fix"
   },
@@ -15,7 +17,17 @@
   "author": "various",
   "license": "UNLICENSED",
   "dependencies": {
-    "mqtt": "^2.18.8"
+    "@koa/cors": "^2.2.2",
+    "debug": "^4.1.0",
+    "dotenv": "^6.1.0",
+    "influx": "^5.0.7",
+    "koa": "^2.5.3",
+    "koa-bodyparser": "^4.2.1",
+    "koa-json": "^2.0.2",
+    "koa-logger": "^3.2.0",
+    "koa-router": "^7.4.0",
+    "mqtt": "^2.18.8",
+    "vali-date": "^1.0.0"
   },
   "devDependencies": {
     "eslint": "^5.7.0",

@@ -1,28 +1,45 @@
+const log = require('debug')('mqtt');
+const debug = require('debug')('mqtt:debug');
 const mqtt = require('mqtt');
 const config = require('./config.js');
 
 const lookup = (obj, prop) => (prop in obj ? obj[prop] : prop);
 
+// battery value needs to be read periodically
+const setupBatteryCheck = (client) => {
+  setInterval(() => {
+    Object.values(config.thingy.devices).forEach((device) => {
+      client.read(device, 'battery', 'battery_level');
+    });
+  }, 5000, client);
+};
+
 module.exports = {
   connect() {
-    console.log(`MQTT: connecting to "${config.mqtt.host}"`);
-    const client = mqtt.connect(config.mqtt.host, config.mqtt.auth);
+    log(`connecting to "${process.env.MQTT_HOST}"`);
+    const client = mqtt.connect(
+      process.env.MQTT_HOST, {
+        username: process.env.MQTT_USERNAME,
+        password: process.env.MQTT_PASSWORD
+      }
+    );
 
     client.on('connect', () => {
-      console.log('MQTT: connected');
+      log('connected');
       const subscribe = ['+/+', '+/+/+'];
       client.subscribe(subscribe, (err) => {
         const subjson = JSON.stringify(subscribe);
         if (err) {
-          console.error(`MQTT: error trying to subscribe to ${subjson}`);
+          log(`error trying to subscribe to ${subjson}`);
         } else {
-          console.log(`MQTT: subscribed to ${subjson}`);
+          log(`subscribed to ${subjson}`);
+          setupBatteryCheck(client);
         }
       });
     });
 
     client.on('error', () => {
-      console.error(`MQTT: unable to connect to "${config.mqtt.host}"`);
+      log(`unable to connect to "${process.env.MQTT_HOST}"`);
     });
 
     client.on('message', (topic, message) => {
@@ -32,14 +49,7 @@ module.exports = {
       if (serviceUUID === 'connected') {
         const connected = message.toString() === 'true';
         const device = lookup(config.thingy.devices, deviceUri);
-        console.debug(`MQTT: ${device} ${connected ? '' : 'dis'}connected`);
-
-        // ask for name of newly connected, unknown thingy
-        if (connected && device === deviceUri) {
-          const confUUID = config.thingy.UUIDS.configuration;
-          const nameUUID = config.thingy.UUIDS.name;
-          client.publish(`${deviceUri}/${confUUID}/${nameUUID}/read`);
-        }
+        debug(`${device} ${connected ? '' : 'dis'}connected`);
         return;
       }
 
@@ -47,7 +57,8 @@ module.exports = {
       if (charUUID === config.thingy.UUIDS.name) {
         const name = message.toString();
         config.thingy.devices[deviceUri] = name;
-        console.debug(`MQTT: ${deviceUri} refers to ${name}`);
+        config.thingy.IDS[name] = deviceUri;
+        debug(`${deviceUri} refers to ${name}`);
       }
 
       const device = lookup(config.thingy.devices, deviceUri);
@@ -55,9 +66,29 @@ module.exports = {
       const characteristic = lookup(config.thingy.characteristics, charUUID);
       const friendlyTopic = `${device}/${service}/${characteristic}`;
 
-      console.debug(`MQTT#${friendlyTopic}: ${message.toString('hex')}`);
-      client.emit(characteristic, message);
+      // ask for name of unknown thingy
+      if (device === deviceUri) {
+        client.read(device, 'configuration', 'name');
+        return;
+      }
+
+      debug(`MQTT#${friendlyTopic}: ${message.toString('hex')}`);
+      client.emit(characteristic, { data: message, device });
     });
+
+    client.read = (device, service, characteristic) => {
+      const deviceUri = lookup(config.thingy.IDS, device);
+      const serviceUUID = config.thingy.UUIDS[service];
+      const charUUID = config.thingy.UUIDS[characteristic];
+      client.publish(`${deviceUri}/${serviceUUID}/${charUUID}/read`);
+    };
+
+    client.write = (device, service, characteristic, data) => {
+      const deviceUri = lookup(config.thingy.IDS, device);
+      const serviceUUID = config.thingy.UUIDS[service];
+      const charUUID = config.thingy.UUIDS[characteristic];
+      client.publish(`${deviceUri}/${serviceUUID}/${charUUID}/write`, data);
+    };
 
     return client;
   }

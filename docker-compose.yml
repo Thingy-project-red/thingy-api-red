@@ -1,0 +1,20 @@
+version: '3.2'
+services:
+  db:
+    image: influxdb:1.6-alpine
+    env_file:
+      - .env
+    volumes:
+      - type: volume
+        source: influx
+        target: /var/lib/influxdb
+  api:
+    build: .
+    depends_on:
+      - db
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+volumes:
+  influx:

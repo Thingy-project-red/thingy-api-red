@@ -1,0 +1,10 @@
+# These files are excluded from the build context and
+# won't be copied into the Docker image
+
+# Node.js
+node_modules/
+# Docker
+Dockerfile
+docker-compose.yml
+# Credentials
+.env
