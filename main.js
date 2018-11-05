@@ -22,8 +22,7 @@ const influxConfig = {
       fields: {
         red: Influx.FieldType.INTEGER,
         green: Influx.FieldType.INTEGER,
-        blue: Influx.FieldType.INTEGER,
-        clear: Influx.FieldType.INTEGER
+        blue: Influx.FieldType.INTEGER
       },
       tags: ['device']
     },
@@ -79,10 +78,11 @@ mqtt.on('light_intensity', async ({ data, device }) => {
     clear: data.readUInt16LE(6)
   };
   const open = util.isDoorOpen(light);
+  const rgb = util.toRgb(light);
   await influx.writePoints([
     {
       measurement: 'light_intensity',
-      fields: light,
+      fields: rgb,
       tags: { device }
     },
     {
