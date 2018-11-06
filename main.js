@@ -8,11 +8,18 @@ const json = require('koa-json');
 const bodyParser = require('koa-bodyparser');
 const logger = require('koa-logger');
 const validate = require('vali-date');
+const { MongoClient } = require('mongodb');
+const bcrypt = require('bcryptjs');
 const mqtt = require('./mqtt.js').connect();
 const util = require('./util.js');
 
 const app = new Koa();
 const router = new Router();
+
+/*
+ * InfluxDB setup
+ */
+
 const influxConfig = {
   host: 'db',
   database: process.env.INFLUXDB_DB,
@@ -65,6 +72,24 @@ const influxConfig = {
   ]
 };
 const influx = new Influx.InfluxDB(influxConfig);
+
+/*
+ * MongoDB setup
+ */
+
+// Collection where users are stored (increment version when changing schema)
+const usersCollection = 'user-v1';
+// Reference to the users collection in our DB, which we'll use to access it
+let users;
+// Initialization
+(async function mongoInit() {
+  // Connect to DB
+  const client = await MongoClient.connect(
+    'mongodb://user-db:27017', { useNewUrlParser: true }
+  );
+  // Store reference to users collection in the users DB
+  users = client.db('users').collection(usersCollection);
+}());
 
 /*
  * MQTT handlers receiving and storing sensor data
@@ -246,10 +271,78 @@ async function getDevices(ctx) {
 }
 
 /*
+ * User management endpoints
+ */
+
+async function getUsers(ctx) {
+  const userObjects = await users.find(
+    {}, { fields: { _id: 0, hash: 0 } }
+  ).toArray();
+  ctx.body = userObjects;
+}
+
+async function addUser(ctx) {
+  // Check if request contains the required information
+  if (!['name', 'password'].every(x => x in ctx.request.body)) {
+    ctx.throw(400, 'Missing attributes');
+  }
+  // Obtain name and password
+  const { name, password } = ctx.request.body;
+  // Check if user doesn't exist yet
+  if ((await users.find({ name }).toArray()).length !== 0) {
+    ctx.throw(400, 'User exists already');
+  }
+
+  // Compute salted hash (10 salt rounds)
+  const hash = await bcrypt.hash(password, 10);
+  // Store user
+  await users.insertOne({ name, hash });
+
+  // Return representation of created user (without password hash)
+  ctx.body = { name };
+}
+
+async function deleteUser(ctx) {
+  if ((await users.deleteOne({ name: ctx.params.user })).deletedCount !== 1) {
+    ctx.throw(404, 'User doesn\'t exist');
+  }
+  ctx.status = 204;
+}
+
+async function authenticate(ctx) {
+  // Check if name and password were submitted
+  if (!('name' in ctx.request.body && 'password' in ctx.request.body)) {
+    ctx.throw(400, 'User\'s name and password required');
+  }
+  // Obtain name and password
+  const { name, password } = ctx.request.body;
+  // Fetch user from DB
+  const results = await users.find({ name }).toArray();
+  // Check if user exists
+  if (results.length === 0) {
+    ctx.throw(401, 'User doesn\'t exist');
+  }
+  // If so, get user
+  const [user] = results;
+
+  // Compare password with salted hash
+  if (!(await bcrypt.compare(password, user.hash))) {
+    ctx.throw(401, 'Wrong password');
+  }
+  // Here we'd generate our signed JWT containing the user's access rights.
+  // But for now, we return 204 to indicate the user has been authenticated
+  ctx.status = 204;
+}
+
+/*
  * Routes, middlewares, Node.js
  */
 
 router
+  .get('/api/v1/users', getUsers)
+  .post('/api/v1/users', addUser)
+  .del('/api/v1/users/:user', deleteUser)
+  .post('/api/v1/auth', authenticate)
   .get('/api/v1/devices', getDevices)
   .get('/api/v1/:device/:metric/:seconds', getMetricSeconds)
   .get('/api/v1/:device/:metric', getMetric);
