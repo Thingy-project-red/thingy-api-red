@@ -279,6 +279,8 @@ async function getDevices(ctx) {
  * User management endpoints
  */
 
+const userRights = ['admin', 'api'];
+
 async function getUsers(ctx) {
   const userObjects = await users.find(
     {}, { fields: { _id: 0, hash: 0 } }
@@ -288,11 +290,15 @@ async function getUsers(ctx) {
 
 async function addUser(ctx) {
   // Check if request contains the required information
-  if (!['name', 'password'].every(x => x in ctx.request.body)) {
+  if (!['name', 'password', 'rights'].every(x => x in ctx.request.body)) {
     ctx.throw(400, 'Missing attributes');
   }
-  // Obtain name and password
-  const { name, password } = ctx.request.body;
+  // Obtain name, password & rights
+  const { name, password, rights } = ctx.request.body;
+  // Make sure rights are valid
+  if (!rights.every(x => userRights.includes(x)) || rights.length === 0) {
+    ctx.throw(400, 'Invalid user rights');
+  }
   // Check if user doesn't exist yet
   if ((await users.find({ name }).toArray()).length !== 0) {
     ctx.throw(400, 'User exists already');
@@ -301,10 +307,10 @@ async function addUser(ctx) {
   // Compute salted hash (10 salt rounds)
   const hash = await bcrypt.hash(password, 10);
   // Store user
-  await users.insertOne({ name, hash });
+  await users.insertOne({ name, rights, hash });
 
   // Return representation of created user (without password hash)
-  ctx.body = { name };
+  ctx.body = { name, rights };
 }
 
 async function deleteUser(ctx) {
