@@ -84,11 +84,16 @@ let users;
 // Initialization
 (async function mongoInit() {
   // Connect to DB
-  const client = await MongoClient.connect(
-    'mongodb://user-db:27017', { useNewUrlParser: true }
-  );
-  // Store reference to users collection in the users DB
-  users = client.db('users').collection(usersCollection);
+  try {
+    const client = await MongoClient.connect(
+      'mongodb://user-db:27017', { useNewUrlParser: true }
+    );
+    // Store reference to users collection in the users DB
+    users = client.db('users').collection(usersCollection);
+  } catch (err) {
+    log('Error connecting to MongoDB, trying again');
+    mongoInit();
+  }
 }());
 
 /*
