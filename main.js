@@ -8,10 +8,10 @@ const json = require('koa-json');
 const bodyParser = require('koa-bodyparser');
 const logger = require('koa-logger');
 const validate = require('vali-date');
-const { MongoClient } = require('mongodb');
 const bcrypt = require('bcryptjs');
 const mqtt = require('./mqtt.js').connect();
 const util = require('./util.js');
+const mongo = require('./mongo.js');
 
 const app = new Koa();
 const router = new Router();
@@ -72,29 +72,6 @@ const influxConfig = {
   ]
 };
 const influx = new Influx.InfluxDB(influxConfig);
-
-/*
- * MongoDB setup
- */
-
-// Collection where users are stored (increment version when changing schema)
-const usersCollection = 'user-v1';
-// Reference to the users collection in our DB, which we'll use to access it
-let users;
-// Initialization
-(async function mongoInit() {
-  // Connect to DB
-  try {
-    const client = await MongoClient.connect(
-      'mongodb://user-db:27017', { useNewUrlParser: true }
-    );
-    // Store reference to users collection in the users DB
-    users = client.db('users').collection(usersCollection);
-  } catch (err) {
-    log('Error connecting to MongoDB, trying again');
-    mongoInit();
-  }
-}());
 
 /*
  * MQTT handlers receiving and storing sensor data
@@ -282,6 +259,9 @@ async function getDevices(ctx) {
 const userRights = ['admin', 'api'];
 
 async function getUsers(ctx) {
+  // Get MongoDB connection
+  const users = await mongo();
+
   const userObjects = await users.find(
     {}, { fields: { _id: 0, hash: 0 } }
   ).toArray();
@@ -289,6 +269,9 @@ async function getUsers(ctx) {
 }
 
 async function addUser(ctx) {
+  // Get MongoDB connection
+  const users = await mongo();
+
   // Check if request contains the required information
   if (!['name', 'password', 'rights'].every(x => x in ctx.request.body)) {
     ctx.throw(400, 'Missing attributes');
@@ -314,6 +297,9 @@ async function addUser(ctx) {
 }
 
 async function deleteUser(ctx) {
+  // Get MongoDB connection
+  const users = await mongo();
+
   if ((await users.deleteOne({ name: ctx.params.user })).deletedCount !== 1) {
     ctx.throw(404, 'User doesn\'t exist');
   }
@@ -321,6 +307,9 @@ async function deleteUser(ctx) {
 }
 
 async function authenticate(ctx) {
+  // Get MongoDB connection
+  const users = await mongo();
+
   // Check if name and password were submitted
   if (!('name' in ctx.request.body && 'password' in ctx.request.body)) {
     ctx.throw(400, 'User\'s name and password required');
