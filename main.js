@@ -11,67 +11,11 @@ const validate = require('vali-date');
 const bcrypt = require('bcryptjs');
 const mqtt = require('./mqtt.js').connect();
 const util = require('./util.js');
+const { influx, influxConfig } = require('./influx.js');
 const mongo = require('./mongo.js');
 
 const app = new Koa();
 const router = new Router();
-
-/*
- * InfluxDB setup
- */
-
-const influxConfig = {
-  host: 'db',
-  database: process.env.INFLUXDB_DB,
-  schema: [
-    {
-      measurement: 'light_intensity',
-      fields: {
-        red: Influx.FieldType.INTEGER,
-        green: Influx.FieldType.INTEGER,
-        blue: Influx.FieldType.INTEGER
-      },
-      tags: ['device']
-    },
-    {
-      measurement: 'door',
-      fields: {
-        open: Influx.FieldType.BOOLEAN
-      },
-      tags: ['device']
-    },
-    {
-      measurement: 'humidity',
-      fields: {
-        humidity: Influx.FieldType.INTEGER
-      },
-      tags: ['device']
-    },
-    {
-      measurement: 'temperature',
-      fields: {
-        temperature: Influx.FieldType.FLOAT
-      },
-      tags: ['device']
-    },
-    {
-      measurement: 'air_quality',
-      fields: {
-        eco2: Influx.FieldType.INTEGER,
-        tvoc: Influx.FieldType.INTEGER
-      },
-      tags: ['device']
-    },
-    {
-      measurement: 'battery_level',
-      fields: {
-        battery_level: Influx.FieldType.INTEGER
-      },
-      tags: ['device']
-    }
-  ]
-};
-const influx = new Influx.InfluxDB(influxConfig);
 
 /*
  * MQTT handlers receiving and storing sensor data
