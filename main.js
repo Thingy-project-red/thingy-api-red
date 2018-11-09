@@ -13,7 +13,7 @@ const thingyEndpoints = require('./thingy-endpoints.js');
 const userEndpoints = require('./user-endpoints.js');
 
 const app = new Koa();
-const router = new Router();
+const router = new Router({ prefix: '/api/v1' });
 
 /*
  * MQTT handlers receiving and storing sensor data
@@ -94,13 +94,13 @@ mqtt.on('battery_level', async ({ data, device }) => {
  */
 
 router
-  .get('/api/v1/users', userEndpoints.getUsers)
-  .post('/api/v1/users', userEndpoints.addUser)
-  .del('/api/v1/users/:user', userEndpoints.deleteUser)
-  .post('/api/v1/auth', userEndpoints.authenticate)
-  .get('/api/v1/devices', thingyEndpoints.getDevices)
-  .get('/api/v1/:device/:metric/:seconds', thingyEndpoints.getMetricSeconds)
-  .get('/api/v1/:device/:metric', thingyEndpoints.getMetric);
+  .get('/users', userEndpoints.getUsers)
+  .post('/users', userEndpoints.addUser)
+  .del('/users/:user', userEndpoints.deleteUser)
+  .post('/auth', userEndpoints.authenticate)
+  .get('/devices', thingyEndpoints.getDevices)
+  .get('/:device/:metric/:seconds', thingyEndpoints.getMetricSeconds)
+  .get('/:device/:metric', thingyEndpoints.getMetric);
 
 app
   .use(bodyParser())
