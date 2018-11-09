@@ -11,7 +11,19 @@ const metrics = [
   'battery_level'
 ];
 
-async function getMetricSeconds(ctx) {
+function stripPrefix(obj, prefix) {
+  Object.keys(obj).forEach((key) => {
+    if (key.startsWith(prefix)) {
+      /* eslint-disable no-param-reassign */
+      // Modification of argument is intended, creating a copy is unnecessary
+      obj[key.substr(prefix.length)] = obj[key];
+      delete obj[key];
+      /* eslint-enable no-param-reassign */
+    }
+  });
+}
+
+async function getMetricSeconds(ctx, avg) {
   // Parse seconds to make sure we work with a valid number
   const seconds = parseInt(ctx.params.seconds, 10);
   if (Number.isNaN(seconds)) {
@@ -24,17 +36,32 @@ async function getMetricSeconds(ctx) {
     ctx.throw(404, 'Invalid metric');
   }
 
+  // router passes some other argument - thus check strict equalness
+  const average = avg === true;
+  // Choose appropriate selector based on average or not
+  const selector = average ? 'mean(*)' : '*';
+
   // Get measurements going back the given amount of seconds
   const device = Influx.escape.tag(ctx.params.device);
   const rows = await influx.query(
-    `SELECT * FROM ${metric}
+    `SELECT ${selector} FROM ${metric}
     WHERE device='${device}' AND time > now() - ${seconds}s ORDER BY time`
   );
+
+  if (average) {
+    // Keep data consistent
+    stripPrefix(rows[0], 'mean_');
+    rows[0].device = device;
+  }
 
   ctx.body = rows;
 }
 
-async function getMetric(ctx) {
+async function getAvgMetricSeconds(ctx) {
+  await getMetricSeconds(ctx, true);
+}
+
+async function getMetric(ctx, avg) {
   // check if queried metric is valid
   const { metric } = ctx.params;
   if (!metrics.includes(metric)) {
@@ -42,6 +69,8 @@ async function getMetric(ctx) {
   }
   // Determine device
   const device = Influx.escape.tag(ctx.params.device);
+  // router passes some other argument - thus check for strict equalness
+  const average = avg === true;
   // Results will be stored in and returned from here
   let rows;
 
@@ -67,9 +96,13 @@ async function getMetric(ctx) {
 
     // Build query depending on whether we have one or two parameters
     const timeSelection = `${conditions.join(' AND ')}`;
+
+    // Choose appropriate selector based on average or not
+    const selector = average ? 'mean(*)' : '*';
+
     // Execute time range query
     rows = await influx.query(
-      `SELECT * FROM ${metric}
+      `SELECT ${selector} FROM ${metric}
       WHERE device='${device}' AND ${timeSelection}
       ORDER BY time`
     );
@@ -85,15 +118,28 @@ async function getMetric(ctx) {
     // ...then select the first field
     const [field] = Object.keys(schema.fields);
 
+    // Choose appropriate selector based on average or not
+    const selector = average ? 'mean(*)' : `LAST(${field}),*`;
+
     // Execute query
     rows = await influx.query(
-      `SELECT LAST(${field}),* FROM ${metric} WHERE device='${device}'`
+      `SELECT ${selector} FROM ${metric} WHERE device='${device}'`
     );
     // Remove the automatically added 'last' property which is a duplicate
     delete rows[0].last;
   }
 
+  if (average) {
+    // Keep data consistent
+    stripPrefix(rows[0], 'mean_');
+    rows[0].device = device;
+  }
+
   ctx.body = rows;
+}
+
+async function getAvgMetric(ctx) {
+  await getMetric(ctx, true);
 }
 
 async function getDevices(ctx) {
@@ -105,6 +151,8 @@ async function getDevices(ctx) {
 
 module.exports = {
   getMetricSeconds,
+  getAvgMetricSeconds,
   getMetric,
+  getAvgMetric,
   getDevices
 };

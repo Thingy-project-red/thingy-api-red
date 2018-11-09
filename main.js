@@ -99,6 +99,8 @@ router
   .del('/users/:user', userEndpoints.deleteUser)
   .post('/auth', userEndpoints.authenticate)
   .get('/devices', thingyEndpoints.getDevices)
+  .get('/:device/:metric/average/:seconds', thingyEndpoints.getAvgMetricSeconds)
+  .get('/:device/:metric/average', thingyEndpoints.getAvgMetric)
   .get('/:device/:metric/:seconds', thingyEndpoints.getMetricSeconds)
   .get('/:device/:metric', thingyEndpoints.getMetric);
 
