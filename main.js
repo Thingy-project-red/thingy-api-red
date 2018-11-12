@@ -6,6 +6,7 @@ const cors = require('@koa/cors');
 const json = require('koa-json');
 const bodyParser = require('koa-bodyparser');
 const logger = require('koa-logger');
+const jwt = require('koa-jwt')({ secret: process.env.JWT_SECRET });
 const mqtt = require('./mqtt.js').connect();
 const util = require('./util.js');
 const { influx } = require('./influx.js');
@@ -90,13 +91,33 @@ mqtt.on('battery_level', async ({ data, device }) => {
 });
 
 /*
+ * Generator for middleware comparing user rights in JWT with the required ones
+ * to determine if the user is authorized to use this endpoint.
+ */
+
+function authorize(requiredRights) {
+  return async (ctx, next) => {
+    // Make sure there is a rights property
+    if (!('rights' in ctx.state.user)) {
+      ctx.throw(401, 'Invalid JWT, missing rights');
+    }
+    // Make sure user has all required rights
+    if (!requiredRights.every(x => ctx.state.user.rights.includes(x))) {
+      ctx.throw(401);
+    }
+
+    await next();
+  };
+}
+
+/*
  * Routes, middlewares, Node.js
  */
 
 router
   .get('/users', userEndpoints.getUsers)
-  .post('/users', userEndpoints.addUser)
-  .del('/users/:user', userEndpoints.deleteUser)
+  .post('/users', jwt, authorize(['admin']), userEndpoints.addUser)
+  .del('/users/:user', jwt, authorize(['admin']), userEndpoints.deleteUser)
   .post('/auth', userEndpoints.authenticate)
   .get('/devices', thingyEndpoints.getDevices)
   .get('/:device/:metric/average/:seconds', thingyEndpoints.getAvgMetricSeconds)
