@@ -62,18 +62,31 @@ async function authenticate(ctx) {
   }
   // Obtain name and password
   const { name, password } = ctx.request.body;
-  // Fetch user from DB
-  const results = await users.find({ name }).toArray();
-  // Check if user exists
-  if (results.length === 0) {
-    ctx.throw(401, 'User doesn\'t exist');
-  }
-  // If so, get user
-  const [user] = results;
+  let user;
+  if (name === process.env.USERS_ADMIN_NAME) {
+    // This is the artificial admin user
+    if (password !== process.env.USERS_ADMIN_PASSWORD) {
+      ctx.throw(401, 'Wrong password');
+    }
+    // Since the user doesn't exist, we need to build it
+    user = {
+      name,
+      rights: ['admin']
+    };
+  } else {
+    // Fetch user from DB
+    const results = await users.find({ name }).toArray();
+    // Check if user exists
+    if (results.length === 0) {
+      ctx.throw(401, 'User doesn\'t exist');
+    }
+    // If so, get user
+    [user] = results;
 
-  // Compare password with salted hash
-  if (!(await bcrypt.compare(password, user.hash))) {
-    ctx.throw(401, 'Wrong password');
+    // Compare password with salted hash
+    if (!(await bcrypt.compare(password, user.hash))) {
+      ctx.throw(401, 'Wrong password');
+    }
   }
 
   // Prepare JWT signing
