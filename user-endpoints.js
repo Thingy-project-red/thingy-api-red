@@ -1,4 +1,5 @@
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const mongo = require('./mongo.js');
 
 const userRights = ['admin', 'api'];
@@ -74,9 +75,21 @@ async function authenticate(ctx) {
   if (!(await bcrypt.compare(password, user.hash))) {
     ctx.throw(401, 'Wrong password');
   }
-  // Here we'd generate our signed JWT containing the user's access rights.
-  // But for now, we return 204 to indicate the user has been authenticated
-  ctx.status = 204;
+
+  // Prepare JWT signing
+  const signOptions = {
+    issuer: 'thingy-api-red',
+    subject: user.name,
+    expiresIn: '1d'
+  };
+  // Generate JWT with user's rights
+  const token = await jwt.sign(
+    { rights: user.rights },
+    process.env.JWT_SECRET,
+    signOptions
+  );
+
+  ctx.body = token;
 }
 
 module.exports = {
