@@ -15,6 +15,7 @@ const userEndpoints = require('./user-endpoints.js');
 
 const app = new Koa();
 const router = new Router({ prefix: '/api/v1' });
+const apiRouter = new Router({ prefix: '/api/v1' });
 
 /*
  * MQTT handlers receiving and storing sensor data
@@ -118,7 +119,10 @@ router
   .get('/users', userEndpoints.getUsers)
   .post('/users', jwt, authorize(['admin']), userEndpoints.addUser)
   .del('/users/:user', jwt, authorize(['admin']), userEndpoints.deleteUser)
-  .post('/auth', userEndpoints.authenticate)
+  .post('/auth', userEndpoints.authenticate);
+
+apiRouter
+  .use(jwt, authorize(['api']))
   .get('/devices', thingyEndpoints.getDevices)
   .get('/:device/:metric/average/:seconds', thingyEndpoints.getAvgMetricSeconds)
   .get('/:device/:metric/average', thingyEndpoints.getAvgMetric)
@@ -131,7 +135,9 @@ app
   .use(logger())
   .use(json())
   .use(router.routes())
-  .use(router.allowedMethods());
+  .use(router.allowedMethods())
+  .use(apiRouter.routes())
+  .use(apiRouter.allowedMethods());
 
 const port = 8000;
 app.listen(port, () => {
