@@ -116,10 +116,11 @@ function authorize(requiredRights) {
  */
 
 router
+  .post('/auth', userEndpoints.authenticate)
+  .use(jwt, authorize(['admin']))
   .get('/users', userEndpoints.getUsers)
-  .post('/users', jwt, authorize(['admin']), userEndpoints.addUser)
-  .del('/users/:user', jwt, authorize(['admin']), userEndpoints.deleteUser)
-  .post('/auth', userEndpoints.authenticate);
+  .post('/users', userEndpoints.addUser)
+  .del('/users/:user', userEndpoints.deleteUser);
 
 apiRouter
   .use(jwt, authorize(['api']))
