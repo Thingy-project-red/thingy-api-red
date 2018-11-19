@@ -176,7 +176,7 @@ async function getAvgMetric(ctx) {
     }
   }
 
-  await getMetric(ctx, true, interval);
+  await getMetricCommon(ctx, true, interval);
 
   // Keep data consistent
   ctx.body.forEach((row) => {
