@@ -23,7 +23,7 @@ function stripPrefix(obj, prefix) {
   });
 }
 
-async function getMetricSeconds(ctx, avg) {
+async function getMetricSecondsCommon(ctx, average, interval) {
   // Parse seconds to make sure we work with a valid number
   const seconds = parseInt(ctx.params.seconds, 10);
   if (Number.isNaN(seconds)) {
@@ -36,32 +36,52 @@ async function getMetricSeconds(ctx, avg) {
     ctx.throw(404, 'Invalid metric');
   }
 
-  // router passes some other argument - thus check strict equalness
-  const average = avg === true;
   // Choose appropriate selector based on average or not
   const selector = average ? 'mean(*)' : '*';
+
+  // Modifier: order by time not needed for average.
+  // Instead group by time interval if present.
+  let modifier = 'ORDER BY time';
+  if (average) {
+    modifier = interval ? `GROUP BY time(${interval}s)` : '';
+  }
 
   // Get measurements going back the given amount of seconds
   const device = Influx.escape.tag(ctx.params.device);
   const rows = await influx.query(
     `SELECT ${selector} FROM ${metric}
-    WHERE device='${device}' AND time > now() - ${seconds}s ORDER BY time`
+    WHERE device='${device}' AND time > now() - ${seconds}s
+    ${modifier}`
   );
-
-  if (average) {
-    // Keep data consistent
-    stripPrefix(rows[0], 'mean_');
-    rows[0].device = device;
-  }
 
   ctx.body = rows;
 }
 
-async function getAvgMetricSeconds(ctx) {
-  await getMetricSeconds(ctx, true);
+async function getMetricSeconds(ctx) {
+  await getMetricSecondsCommon(ctx, false, 0);
 }
 
-async function getMetric(ctx, avg) {
+async function getAvgMetricSeconds(ctx) {
+  let interval = 0;
+  if ('interval' in ctx.query) {
+    // Parse interval to make sure we work with a valid number
+    interval = parseInt(ctx.query.interval, 10);
+    if (Number.isNaN(interval)) {
+      ctx.throw(400, 'Invalid interval');
+    }
+  }
+
+  await getMetricSecondsCommon(ctx, true, interval);
+
+  // Keep data consistent
+  ctx.body.forEach((row) => {
+    stripPrefix(row, 'mean_');
+    // eslint-disable-next-line no-param-reassign
+    row.device = ctx.params.device;
+  });
+}
+
+async function getMetricCommon(ctx, average, interval) {
   // check if queried metric is valid
   const { metric } = ctx.params;
   if (!metrics.includes(metric)) {
@@ -69,8 +89,6 @@ async function getMetric(ctx, avg) {
   }
   // Determine device
   const device = Influx.escape.tag(ctx.params.device);
-  // router passes some other argument - thus check for strict equalness
-  const average = avg === true;
   // Results will be stored in and returned from here
   let rows;
 
@@ -100,11 +118,18 @@ async function getMetric(ctx, avg) {
     // Choose appropriate selector based on average or not
     const selector = average ? 'mean(*)' : '*';
 
+    // Modifier: order by time not needed for average.
+    // Instead group by time interval if present.
+    let modifier = 'ORDER BY time';
+    if (average) {
+      modifier = interval ? `GROUP BY time(${interval}s)` : '';
+    }
+
     // Execute time range query
     rows = await influx.query(
       `SELECT ${selector} FROM ${metric}
       WHERE device='${device}' AND ${timeSelection}
-      ORDER BY time`
+      ${modifier}`
     );
   } else {
     // If no time range was given, return the latest measurement
@@ -121,25 +146,44 @@ async function getMetric(ctx, avg) {
     // Choose appropriate selector based on average or not
     const selector = average ? 'mean(*)' : `LAST(${field}),*`;
 
+    // If interval present, group by time interval to get averages.
+    const modifier = average && interval ? `GROUP BY time(${interval}s)` : '';
+
     // Execute query
     rows = await influx.query(
-      `SELECT ${selector} FROM ${metric} WHERE device='${device}'`
+      `SELECT ${selector} FROM ${metric}
+      WHERE device='${device}'
+      ${modifier}`
     );
     // Remove the automatically added 'last' property which is a duplicate
     delete rows[0].last;
   }
 
-  if (average) {
-    // Keep data consistent
-    stripPrefix(rows[0], 'mean_');
-    rows[0].device = device;
-  }
-
   ctx.body = rows;
 }
 
+async function getMetric(ctx) {
+  await getMetricCommon(ctx, false, 0);
+}
+
 async function getAvgMetric(ctx) {
-  await getMetric(ctx, true);
+  let interval = 0;
+  if ('interval' in ctx.query) {
+    // Parse interval to make sure we work with a valid number
+    interval = parseInt(ctx.query.interval, 10);
+    if (Number.isNaN(interval)) {
+      ctx.throw(400, 'Invalid interval');
+    }
+  }
+
+  await getMetric(ctx, true, interval);
+
+  // Keep data consistent
+  ctx.body.forEach((row) => {
+    stripPrefix(row, 'mean_');
+    // eslint-disable-next-line no-param-reassign
+    row.device = ctx.params.device;
+  });
 }
 
 async function getDevices(ctx) {
