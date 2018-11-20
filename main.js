@@ -7,6 +7,8 @@ const json = require('koa-json');
 const bodyParser = require('koa-bodyparser');
 const logger = require('koa-logger');
 const jwt = require('koa-jwt')({ secret: process.env.JWT_SECRET });
+const req = require('require-yml');
+const koaSwagger = require('koa2-swagger-ui');
 const mqtt = require('./mqtt.js').connect();
 const util = require('./util.js');
 const { influx } = require('./influx.js');
@@ -135,6 +137,11 @@ app
   .use(cors())
   .use(logger())
   .use(json())
+  .use(koaSwagger({
+    swaggerOptions: {
+      spec: req('./openapi.yaml')
+    }
+  }))
   .use(router.routes())
   .use(router.allowedMethods())
   .use(apiRouter.routes())
