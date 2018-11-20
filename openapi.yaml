@@ -1,0 +1,393 @@
+openapi: 3.0.0
+info:
+  title: thingy-api-red
+  description: An API to access data from Thingy:52 devices.
+  contact:
+    name: Team Red
+    url: https://github.com/Thingy-project-red
+  version: 1.0.0
+servers:
+  - url: https://api.thingy-project-red.com/api/v1
+    description: Server hosted on AWS EC2
+  - url: http://localhost:8000/api/v1
+    description: Local development server
+paths:
+  /{device}/{metric}:
+    get:
+      tags:
+        - device
+      summary: Returns all values of a metric from a specific time period or
+               just the latest one
+      operationId: getMetric
+      parameters:
+        - $ref: '#/components/parameters/device'
+        - $ref: '#/components/parameters/metric'
+        - $ref: '#/components/parameters/from'
+        - $ref: '#/components/parameters/to'
+      responses:
+        '200':
+          $ref: '#/components/responses/Measurements'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/InvalidMetric'
+  /{device}/{metric}/{seconds}:
+    get:
+      tags:
+        - device
+      summary: Returns all values of a metric from the past N seconds
+      operationId: getMetricSeconds
+      parameters:
+        - $ref: '#/components/parameters/device'
+        - $ref: '#/components/parameters/metric'
+        - $ref: '#/components/parameters/seconds'
+      responses:
+        '200':
+          $ref: '#/components/responses/Measurements'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/InvalidMetric'
+  /{device}/{metric}/average:
+    get:
+      tags:
+        - device
+      summary: Returns the average value(s) of a metric over a specific time
+               period
+      operationId: getAvgMetric
+      parameters:
+        - $ref: '#/components/parameters/device'
+        - $ref: '#/components/parameters/metric'
+        - $ref: '#/components/parameters/interval'
+        - $ref: '#/components/parameters/from'
+        - $ref: '#/components/parameters/to'
+      responses:
+        '200':
+          $ref: '#/components/responses/Measurements'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/InvalidMetric'
+  /{device}/{metric}/average/{seconds}:
+    get:
+      tags:
+        - device
+      summary: Returns the average value(s) of a metric over the past N seconds
+      operationId: getAvgMetricSeconds
+      parameters:
+        - $ref: '#/components/parameters/device'
+        - $ref: '#/components/parameters/metric'
+        - $ref: '#/components/parameters/seconds'
+        - $ref: '#/components/parameters/interval'
+      responses:
+        '200':
+          $ref: '#/components/responses/Measurements'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/InvalidMetric'
+  /devices:
+    get:
+      tags:
+        - device
+      summary: Returns the names of all devices
+      operationId: getDevices
+      responses:
+        '200':
+          $ref: '#/components/responses/Devices'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /users:
+    get:
+      tags:
+        - user
+      summary: Returns a list of users with their rights
+      operationId: getUsers
+      responses:
+        '200':
+          $ref: '#/components/responses/Users'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags:
+        - user
+      summary: Creates a new user
+      operationId: addUser
+      requestBody:
+        $ref: '#/components/requestBodies/user'
+      responses:
+        '200':
+          $ref: '#/components/responses/User'
+        '400':
+          $ref: '#/components/responses/InvalidUserRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /users/{user}:
+    delete:
+      tags:
+        - user
+      summary: Deletes a user
+      operationId: deleteUser
+      parameters:
+        - $ref: '#/components/parameters/user'
+      responses:
+        '204':
+          $ref: '#/components/responses/Deleted'
+        '404':
+          $ref: '#/components/responses/InvalidUser'
+  /auth:
+    post:
+      tags:
+        - auth
+      summary: Returns a JWT for API access
+      operationId: authenticate
+      security: []
+      requestBody:
+        $ref: '#/components/requestBodies/auth'
+      responses:
+        '200':
+          $ref: '#/components/responses/JWT'
+        '400':
+          $ref: '#/components/responses/InvalidAuthRequest'
+        '401':
+          $ref: '#/components/responses/UnsuccessfulAuth'
+components:
+  parameters:
+    device:
+      in: path
+      name: device
+      required: true
+      schema:
+        type: string
+        example: Thingy1
+      description: The device name
+    metric:
+      in: path
+      name: metric
+      required: true
+      schema:
+        type: string
+        enum: [light_intensity, door, humidity,
+               temperature, air_quality, battery_level]
+        default: temperature
+      description: The selected metric
+    seconds:
+      in: path
+      name: seconds
+      required: true
+      schema:
+        type: integer
+        example: 3600
+      description: Number of seconds to go back
+    interval:
+      in: query
+      name: interval
+      schema:
+        type: integer
+        example: 360
+      description: Interval in seconds over which averages should be taken
+                   (e.g. every 10 minutes)
+    from:
+      in: query
+      name: from
+      schema:
+        type: string
+        format: date-time
+        example: '2018-11-19T18:35:00.000Z'
+      description: Start time (inclusive)
+    to:
+      in: query
+      name: to
+      schema:
+        type: string
+        format: date-time
+        example: '2018-11-19T18:40:00.000Z'
+      description: End time (exclusive)
+    user:
+      in: path
+      name: user
+      required: true
+      schema:
+        type: string
+        example: Alice
+      description: The user's name
+  responses:
+    Unauthorized:
+      description: Access token is missing/invalid or user is not authorized
+                   for this endpoint
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: Authentication Error
+    InvalidRequest:
+      description: Some part of the request is invalid, e.g. the number of
+                   seconds, the interval, date-time, etc.
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: Invalid interval
+    InvalidMetric:
+      description: The given metric is invalid
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: Invalid metric
+    InvalidAuthRequest:
+      description: Request body doesn't contain name or password
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: User's name and password required
+    InvalidUserRequest:
+      description: Attribute missing, invalid user rights, or user exists
+                   already
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: Invalid user rights
+    UnsuccessfulAuth:
+      description: Authentication failed, either user doesn't exist or password
+                   is wrong
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: Wrong password
+    Deleted:
+      description: User deleted
+    InvalidUser:
+      description: Invalid user
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: User doesn't exist
+    Devices:
+      description: Array of device names
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              type: string
+            example: [Thingy1, Thingy2]
+    Measurements:
+      description: Value(s) for the metric
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                time:
+                  type: string
+                  format: date-time
+                  example: '2018-11-20T11:49:34.121Z'
+                temperature:
+                  type: number
+                  example: 15.87
+                device:
+                  type: string
+                  example: Thingy1
+    Users:
+      description: Array of users
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                name:
+                  type: string
+                rights:
+                  type: array
+                  items:
+                    type: string
+            example: [{name: Alice, rights: [api, auth]},
+                      {name: Bob, rights: [api]}]
+    User:
+      description: Representation of user
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                example: Alice
+              rights:
+                type: array
+                items:
+                  type: string
+                example: [api, admin]
+    JWT:
+      description: A valid JWT for the user
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyaWdodHMiOlsiYXB\
+                      pIiwiYWRtaW4iXSwiaWF0IjoxNTQyNzIxMDMyLCJleHAiOjE1NDI4MDc\
+                      0MzIsImlzcyI6InRoaW5neS1hcGktcmVkIiwic3ViIjoiQWxpY2UifQ.\
+                      RkcqPV7umJh7dt8viAS7VH_tfp052UAKktv5uZiTwTQ"
+  requestBodies:
+    auth:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                example: Alice
+              password:
+                type: string
+                example: myGreatPassword
+    user:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                example: Alice
+              password:
+                type: string
+                example: myGreatPassword
+              rights:
+                type: array
+                items:
+                  type: string
+                example: [api, admin]
+  securitySchemes:
+    jwt_auth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+security:
+  - jwt_auth: []
+tags:
+  - name: device
+    description: Access data from devices
+  - name: user
+    description: Manage users
+  - name: auth
+    description: Authenticate for API access
