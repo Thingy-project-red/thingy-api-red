@@ -1,5 +1,14 @@
 # thingy-api-red
-Backend providing the thingy API
+A backend receiving data from Thingy:52 devices via MQTT and providing a REST
+API for convenient access to it.
+
+## Documentation
+There is an OpenAPI specification of all endpoints in `openapi.yaml`.
+The Node.js server hosts SwaggerUI on `/docs` to nicely display it, so when
+running the API locally, that would be http://localhost:8000/docs.
+
+While the API is still hosted on AWS for the duration of the project, it's also
+available at https://api.thingy-project-red.com/docs.
 
 ## Getting started
 1. Install Docker & Docker Compose
@@ -11,14 +20,7 @@ To get everything up and running, use `docker-compose up`.
 If you change some source files, do `docker-compose up --build` to rebuild the
 image with your changes.
 To remove all traces of it from your system, do
-```
-# Remove containers
-docker-compose down
-# Remove image
-docker rmi thingy-api-red_api
-# Remove InfluxDB volume
-docker volume rm thingy-api-red_influx
-```
+`docker-compose down -v --rmi all`.
 
 ## Authentication
 Certain API endpoints are restricted to authorized users and can only be
