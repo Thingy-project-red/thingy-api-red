@@ -94,6 +94,20 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/InvalidMetric'
+  /{device}/status:
+    get:
+      tags:
+        - device
+      summary: Returns the status of the device
+      operationId: getDeviceStatus
+      parameters:
+        - $ref: '#/components/parameters/device'
+      responses:
+        '200':
+          $ref: '#/components/responses/DeviceStatus'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /devices:
     get:
       tags:
@@ -284,6 +298,16 @@ components:
             items:
               type: string
             example: [Thingy1, Thingy2]
+    DeviceStatus:
+      description: Status of the device
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                example: online
     Measurements:
       description: Value(s) for the metric
       content:
