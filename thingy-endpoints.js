@@ -193,10 +193,55 @@ async function getDevices(ctx) {
   ctx.body = rows.map(obj => obj.value);
 }
 
+async function getDeviceStatus(ctx) {
+  // Get latest temperature, humidity, air_quality
+  // if any value isn't older than 20 seconds
+  // then the thingy is seen as online
+
+  // get latest temperature
+  const device = Influx.escape.tag(ctx.params.device);
+  const temperatureRow = await influx.query(
+    `SELECT last(*) FROM temperature
+    WHERE device='${device}'
+    ` 
+  );
+  let temperatureDate = new Date(temperatureRow[0].time);
+
+  // get latest humidity
+  const humidityRow = await influx.query(
+    `SELECT last(*) FROM humidity
+    WHERE device='${device}'
+    ` 
+  );
+  let humidityDate = new Date(humidityRow[0].time);
+
+  // get latest air_quality
+  const airQualityRow = await influx.query(
+    `SELECT last(*) FROM air_quality
+    WHERE device='${device}'
+    ` 
+  );
+  let airQualityDate = new Date(airQualityRow[0].time);
+
+  let date = new Date();
+  date.setSeconds(date.getSeconds() - 20);
+
+  let status = '';
+
+  // compare dates
+  if(date > temperatureDate && date > humidityDate && date > airQualityDate) {
+    status = 'offline';
+  } else {
+    status = 'online';
+  }
+  ctx.body = { status: status };
+}
+
 module.exports = {
   getMetricSeconds,
   getAvgMetricSeconds,
   getMetric,
   getAvgMetric,
-  getDevices
+  getDevices,
+  getDeviceStatus
 };

@@ -127,6 +127,7 @@ router
 apiRouter
   .use(jwt, authorize(['api']))
   .get('/devices', thingyEndpoints.getDevices)
+  .get('/:device/status', thingyEndpoints.getDeviceStatus)
   .get('/:device/:metric/average/:seconds', thingyEndpoints.getAvgMetricSeconds)
   .get('/:device/:metric/average', thingyEndpoints.getAvgMetric)
   .get('/:device/:metric/:seconds', thingyEndpoints.getMetricSeconds)
