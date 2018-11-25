@@ -8,13 +8,21 @@ services:
       - type: volume
         source: influx
         target: /var/lib/influxdb
+  user-db:
+    image: mongo:4-xenial
+    volumes:
+      - type: volume
+        source: mongo
+        target: /data/db
   api:
     build: .
     depends_on:
       - db
+      - user-db
     env_file:
       - .env
     ports:
       - "8000:8000"
 volumes:
   influx:
+  mongo:
