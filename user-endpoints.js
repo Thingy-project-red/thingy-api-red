@@ -71,7 +71,7 @@ async function authenticate(ctx) {
     // Since the user doesn't exist, we need to build it
     user = {
       name,
-      rights: ['admin']
+      rights: ['admin', 'api']
     };
   } else {
     // Fetch user from DB
