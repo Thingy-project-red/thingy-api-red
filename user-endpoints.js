@@ -102,7 +102,10 @@ async function authenticate(ctx) {
     signOptions
   );
 
-  ctx.body = token;
+  ctx.body = {
+    token: token, 
+    expiresIn: 86400
+  };
 }
 
 module.exports = {
