@@ -14,6 +14,7 @@ const util = require('./util.js');
 const { influx } = require('./influx.js');
 const thingyEndpoints = require('./thingy-endpoints.js');
 const userEndpoints = require('./user-endpoints.js');
+const wsBroadcast = require('./websocket.js');
 
 const app = new Koa();
 const router = new Router({ prefix: '/api/v1' });
@@ -44,6 +45,8 @@ mqtt.on('light_intensity', async ({ data, device }) => {
       tags: { device }
     }
   ]);
+  wsBroadcast('light_intensity', device, rgb);
+  wsBroadcast('door', device, { open });
 });
 
 mqtt.on('humidity', async ({ data, device }) => {
@@ -55,6 +58,7 @@ mqtt.on('humidity', async ({ data, device }) => {
       tags: { device }
     }
   ]);
+  wsBroadcast('humidity', device, { humidity });
 });
 
 mqtt.on('temperature', async ({ data, device }) => {
@@ -66,6 +70,7 @@ mqtt.on('temperature', async ({ data, device }) => {
       tags: { device }
     }
   ]);
+  wsBroadcast('temperature', device, { temperature });
 });
 
 mqtt.on('air_quality', async ({ data, device }) => {
@@ -80,6 +85,7 @@ mqtt.on('air_quality', async ({ data, device }) => {
       tags: { device }
     }
   ]);
+  wsBroadcast('air_quality', device, airQuality);
 });
 
 mqtt.on('battery_level', async ({ data, device }) => {
@@ -91,6 +97,7 @@ mqtt.on('battery_level', async ({ data, device }) => {
       tags: { device }
     }
   ]);
+  wsBroadcast('battery_level', device, { battery_level: batteryLevel });
 });
 
 /*
