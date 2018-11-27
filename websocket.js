@@ -1,7 +1,19 @@
 const log = require('debug')('websocket');
+const fs = require('fs');
+const https = require('https');
 const WebSocket = require('ws');
 
-const wss = new WebSocket.Server({ port: 8080 });
+let wss;
+if ('TLS_KEY' in process.env && 'TLS_CERT' in process.env) {
+  const server = new https.createServer({
+    cert: fs.readFileSync(process.env.TLS_CERT),
+    key: fs.readFileSync(process.env.TLS_KEY)
+  });
+  wss = new WebSocket.Server({ server });
+  server.listen(8080);
+} else {
+  wss = new WebSocket.Server({ port: 8080 });
+}
 
 /**
  * Broadcasts the object as JSON to all clients, adding

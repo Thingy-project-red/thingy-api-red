@@ -13,7 +13,8 @@ available at https://api.thingy-project-red.com/docs.
 ## Getting started
 1. Install Docker & Docker Compose
 2. Create and edit `.env`.
-For reference, see `.env.TEMPLATE`
+For reference, see `.env.TEMPLATE`. If you don't use TLS, then remove the
+`TLS_CERT` and `TLS_KEY` variables.
 
 ## Run
 To get everything up and running, use `docker-compose up`.
