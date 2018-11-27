@@ -12,9 +12,7 @@ available at https://api.thingy-project-red.com/docs.
 
 ## Getting started
 1. Install Docker & Docker Compose
-2. Create and edit `.env`.
-For reference, see `.env.TEMPLATE`. If you don't use TLS, then remove the
-`TLS_CERT` and `TLS_KEY` variables.
+2. Create and edit `.env`. For reference, see `.env.TEMPLATE`.
 
 ## Run
 To get everything up and running, use `docker-compose up`.
@@ -41,6 +39,33 @@ For that reason, `.env` should contain the name and password of a special user
 who doesn't really exist in the DB, but will be authenticated and granted
 `admin` permission in the auth endpoint. Keep in mind that this username takes
 precedence over a user of the same name in the DB.
+
+## TLS
+If you want to use TLS, you need to configure some things.
+First of all, the container where the API is running needs to have access to
+the certificates, because they're used in setting up secure WebSockets.
+To do this, a simple but not really nice method is to mount the directory
+structure containing the certificates inside the container.
+To do this with Let's Encrypt, add the following volume definition to
+`docker-compose.yml` in the API service.
+```
+volumes:
+- type: bind
+  source: /etc/letsencrypt
+  target: /etc/letsencrypt
+```
+We need to bind the whole directory structure at the exact same path, because
+the folder with the current certificates uses symbolic links to the certificate
+archive, which can't be resolved by docker-compose.
+
+Finally, edit `.env` and append the following lines, replacing the host URL.
+```
+TLS_CERT=/etc/letsencrypt/live/YOUR_HOST_URL/cert.pem
+TLS_KEY=/etc/letsencrypt/live/YOUR_HOST_URL/privkey.pem
+```
+Keep in mind that they refer to the bind mount inside the container. When the
+environment variables you've just defined are present, the Node.js application
+will read the certificates to create secure WebSockets.
 
 ## Check code with ESLint
 This project uses the
