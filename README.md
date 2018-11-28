@@ -50,9 +50,7 @@ To do this with Let's Encrypt, add the following volume definition to
 `docker-compose.yml` in the API service.
 ```
 volumes:
-- type: bind
-  source: /etc/letsencrypt
-  target: /etc/letsencrypt
+  - /etc/letsencrypt:/etc/letsencrypt:r
 ```
 We need to bind the whole directory structure at the exact same path, because
 the folder with the current certificates uses symbolic links to the certificate
