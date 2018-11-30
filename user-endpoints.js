@@ -2,7 +2,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const mongo = require('./mongo.js');
 
-const userRights = ['admin', 'api'];
+const userRights = ['api', 'admin'];
+
 
 async function getUsers(ctx) {
   // Get MongoDB connection
@@ -25,7 +26,7 @@ async function addUser(ctx) {
   // Obtain name, password & rights
   const { name, password, rights } = ctx.request.body;
   // Make sure rights are valid
-  if (!rights.every(x => userRights.includes(x)) || rights.length === 0) {
+  if (!rights.every(x => userRights.includes(x))) {
     ctx.throw(400, 'Invalid user rights');
   }
   // Check if user doesn't exist yet
@@ -52,6 +53,30 @@ async function deleteUser(ctx) {
   ctx.status = 204;
 }
 
+async function getUser(ctx) {
+  const users = await mongo();
+  const username = ctx.params.username;
+  await users.findOne({ name: username },  { fields: { _id: 0, hash: 0 }})
+    .then(user => {
+      ctx.body = user;
+    })
+    .catch(err => ctx.throw(404, err));
+
+}
+
+async function updateRights(ctx) {
+  const users = await mongo();
+  const rights = ctx.request.body;
+  const username = ctx.params.username;
+  await users.updateOne({ name: username }, { $set: rights })
+    .then(result => {
+      console.log(result);
+      ctx.status = 204;
+      ctx.body = result;
+    })
+    .catch(err => ctx.throw(404, err));
+}
+
 async function authenticate(ctx) {
   // Get MongoDB connection
   const users = await mongo();
@@ -71,7 +96,7 @@ async function authenticate(ctx) {
     // Since the user doesn't exist, we need to build it
     user = {
       name,
-      rights: ['admin', 'api']
+      rights: ['api', 'admin']
     };
   } else {
     // Fetch user from DB
@@ -107,7 +132,9 @@ async function authenticate(ctx) {
 
 module.exports = {
   getUsers,
+  getUser,
   addUser,
+  updateRights,
   deleteUser,
   authenticate
 };
