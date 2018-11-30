@@ -1,0 +1,14 @@
+{
+  "name": "node-red-project",
+  "version": "0.0.1",
+  "description": "Node-RED Project for thingy-project-red",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Thingy-project-red/thingy-api-red.git"
+  },
+  "author": "various",
+  "license": "UNLICENSED",
+  "dependencies": {
+      "node-red-contrib-telegrambot": "^4.4.0"
+  }
+}

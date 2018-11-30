@@ -20,6 +20,13 @@ services:
     ports:
       - "8000:8000"
       - "8080:8080"
+  nodered:
+    build: nodered
+    volumes:
+      - nodered:/data
+    ports:
+      - "1880:1880"
 volumes:
   influx:
   mongo:
+  nodered:
