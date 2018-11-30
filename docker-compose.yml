@@ -24,6 +24,8 @@ services:
     build: nodered
     volumes:
       - nodered:/data
+    env_file:
+      - .env
     ports:
       - "1880:1880"
 volumes:

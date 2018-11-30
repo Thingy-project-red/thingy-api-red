@@ -9,6 +9,6 @@
   "author": "various",
   "license": "UNLICENSED",
   "dependencies": {
-      "node-red-contrib-telegrambot": "^4.4.0"
+    "node-red-contrib-telegrambot": "^4.4.0"
   }
 }
