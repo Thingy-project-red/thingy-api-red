@@ -55,24 +55,21 @@ async function deleteUser(ctx) {
 
 async function getUser(ctx) {
   const users = await mongo();
-  const username = ctx.params.username;
-  await users.findOne({ name: username },  { fields: { _id: 0, hash: 0 }})
-    .then(user => {
+  const name = ctx.params.user;
+  await users.findOne({ name }, { fields: { _id: 0, hash: 0 } })
+    .then((user) => {
       ctx.body = user;
     })
     .catch(err => ctx.throw(404, err));
-
 }
 
 async function updateRights(ctx) {
   const users = await mongo();
   const rights = ctx.request.body;
-  const username = ctx.params.username;
-  await users.updateOne({ name: username }, { $set: rights })
-    .then(result => {
-      console.log(result);
+  const name = ctx.params.user;
+  await users.updateOne({ name }, { $set: rights })
+    .then(() => {
       ctx.status = 204;
-      ctx.body = result;
     })
     .catch(err => ctx.throw(404, err));
 }
