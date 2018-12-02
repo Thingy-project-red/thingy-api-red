@@ -5,12 +5,11 @@ const WebSocket = require('ws');
 
 let wss;
 if ('TLS_KEY' in process.env && 'TLS_CERT' in process.env) {
-  /* eslint-disable new-cap */
+  /* eslint-disable-next-line new-cap */
   const server = new https.createServer({
     cert: fs.readFileSync(process.env.TLS_CERT),
     key: fs.readFileSync(process.env.TLS_KEY)
   });
-  /* eslint-disable new-cap */
   wss = new WebSocket.Server({ server });
   server.listen(8080);
 } else {
