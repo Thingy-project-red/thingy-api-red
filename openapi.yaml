@@ -145,6 +145,18 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
   /users/{user}:
+    get:
+      tags:
+        - user
+      summary: Gets a user
+      operationId: getUser
+      parameters:
+        - $ref: '#/components/parameters/user'
+      responses:
+        '200':
+          $ref: '#/components/responses/User'
+        '404':
+          $ref: '#/components/responses/InvalidUser'
     delete:
       tags:
         - user
@@ -155,6 +167,20 @@ paths:
       responses:
         '204':
           $ref: '#/components/responses/Deleted'
+        '404':
+          $ref: '#/components/responses/InvalidUser'
+    patch:
+      tags:
+        - user
+      summary: Updates partial or complete userdata
+      operationId: patchUser
+      parameters:
+        - $ref: '#/components/parameters/user'
+      requestBody:
+        $ref: '#/components/requestBodies/user'
+      responses:
+        '204':
+          $ref: '#/components/responses/Ok'
         '404':
           $ref: '#/components/responses/InvalidUser'
   /auth:
@@ -282,6 +308,8 @@ components:
             example: Wrong password
     Deleted:
       description: User deleted
+    Ok:
+      description: Request succeeded
     InvalidUser:
       description: Invalid user
       content:
