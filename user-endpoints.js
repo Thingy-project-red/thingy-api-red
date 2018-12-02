@@ -63,11 +63,11 @@ async function getUser(ctx) {
     .catch(err => ctx.throw(404, err));
 }
 
-async function updateRights(ctx) {
+async function updateUser(ctx) {
   const users = await mongo();
-  const rights = ctx.request.body;
+  const data = ctx.request.body;
   const name = ctx.params.user;
-  await users.updateOne({ name }, { $set: rights })
+  await users.updateOne({ name }, { $set: data })
     .then(() => {
       ctx.status = 204;
     })
@@ -131,7 +131,7 @@ module.exports = {
   getUsers,
   getUser,
   addUser,
-  updateRights,
+  updateUser,
   deleteUser,
   authenticate
 };

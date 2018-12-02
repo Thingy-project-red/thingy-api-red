@@ -130,7 +130,7 @@ router
   .use(jwt, authorize(['admin']))
   .get('/users', userEndpoints.getUsers)
   .post('/users', userEndpoints.addUser)
-  .patch('/users/rights/:user', userEndpoints.updateRights)
+  .patch('/users/:user', userEndpoints.updateUser)
   .del('/users/:user', userEndpoints.deleteUser);
 
 
