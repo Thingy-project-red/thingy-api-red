@@ -1,20 +1,7 @@
 const log = require('debug')('websocket');
-const fs = require('fs');
-const https = require('https');
 const WebSocket = require('ws');
 
-let wss;
-if ('TLS_KEY' in process.env && 'TLS_CERT' in process.env) {
-  /* eslint-disable-next-line new-cap */
-  const server = new https.createServer({
-    cert: fs.readFileSync(process.env.TLS_CERT),
-    key: fs.readFileSync(process.env.TLS_KEY)
-  });
-  wss = new WebSocket.Server({ server });
-  server.listen(8080);
-} else {
-  wss = new WebSocket.Server({ port: 8080 });
-}
+const ws = new WebSocket.Server({ port: 8080 });
 
 /**
  * Broadcasts the object as JSON to all clients, adding
@@ -36,7 +23,7 @@ function broadcast(kind, device, object) {
   extendedObject.device = device;
 
   // Broadcast to all clients
-  wss.clients.forEach((client) => {
+  ws.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
       try {
         client.send(JSON.stringify(extendedObject));
