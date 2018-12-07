@@ -7,8 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "DEBUG=mqtt,api,mongo,websocket node .",
     "start-debug": "DEBUG=mqtt*,api,mongo,websocket node .",
-    "eslint": "eslint **/*.js --ignore-pattern node_modules/",
-    "eslint-fix": "eslint **/*.js --ignore-pattern node_modules/ --fix"
+    "eslint": "eslint '**/*.js' --ignore-pattern node_modules/",
+    "eslint-fix": "eslint '**/*.js' --ignore-pattern node_modules/ --fix"
   },
   "repository": {
     "type": "git",
