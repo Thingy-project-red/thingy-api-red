@@ -1,7 +1,27 @@
 const log = require('debug')('websocket');
+const jwt = require('jsonwebtoken');
 const WebSocket = require('ws');
 
-const ws = new WebSocket.Server({ port: 8080 });
+function verifyClient(info, cb) {
+  // This is an ugly hack. Because the plain WebSocket implementation
+  // doesn't let us define custom headers, we need to use an existing
+  // one (subprotocol) to pass the token.
+  const token = info.req.headers['sec-websocket-protocol'];
+  if (!token) {
+    // Abort if no token provided
+    cb(false, 401, 'Unauthorized');
+  } else {
+    jwt.verify(token, process.env.JWT_SECRET, (err) => {
+      if (err) {
+        cb(false, 401, 'Unauthorized');
+      } else {
+        cb(true);
+      }
+    });
+  }
+}
+
+const ws = new WebSocket.Server({ port: 8080, verifyClient });
 
 /**
  * Broadcasts the object as JSON to all clients, adding
