@@ -47,8 +47,17 @@ function isDoorOpen(rawLight) {
   return grayscale > 200;
 }
 
+const units = {
+  temperature: '°C',
+  humidity: '%',
+  eco2: 'ppm',
+  tvoc: 'ppb',
+  battery_level: '%'
+};
+
 module.exports = {
   toRgb,
   toGrayscale,
-  isDoorOpen
+  isDoorOpen,
+  units
 };

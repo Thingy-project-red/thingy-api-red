@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const mongo = require('./mongo.js');
+const prefs = require('./user-thresholds.js');
 
 const userRights = ['api', 'admin'];
 
@@ -41,6 +42,7 @@ async function addUser(ctx) {
 
   // Return representation of created user (without password hash)
   ctx.body = { name, rights };
+  prefs.update();
 }
 
 async function deleteUser(ctx) {
@@ -51,6 +53,7 @@ async function deleteUser(ctx) {
     ctx.throw(404, 'User doesn\'t exist');
   }
   ctx.status = 204;
+  prefs.update();
 }
 
 async function getUser(ctx) {
@@ -70,6 +73,7 @@ async function updateUser(ctx) {
   await users.updateOne({ name }, { $set: data })
     .then(() => {
       ctx.status = 204;
+      prefs.update();
     })
     .catch(err => ctx.throw(404, err));
 }

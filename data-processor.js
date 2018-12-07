@@ -2,6 +2,7 @@ const mqtt = require('./mqtt.js').getClient();
 const util = require('./util.js');
 const { influx } = require('./influx.js');
 const wsBroadcast = require('./websocket.js');
+const prefs = require('./user-thresholds.js');
 
 /*
  * MQTT handlers receiving and storing sensor data
@@ -30,6 +31,7 @@ mqtt.on('light_intensity', async ({ data, device }) => {
   ]);
   wsBroadcast('light_intensity', device, rgb);
   wsBroadcast('door', device, { open });
+  prefs.check('door', device, open);
 });
 
 mqtt.on('humidity', async ({ data, device }) => {
@@ -42,6 +44,7 @@ mqtt.on('humidity', async ({ data, device }) => {
     }
   ]);
   wsBroadcast('humidity', device, { humidity });
+  prefs.check('humidity', device, humidity);
 });
 
 mqtt.on('temperature', async ({ data, device }) => {
@@ -54,6 +57,7 @@ mqtt.on('temperature', async ({ data, device }) => {
     }
   ]);
   wsBroadcast('temperature', device, { temperature });
+  prefs.check('temperature', device, temperature);
 });
 
 mqtt.on('air_quality', async ({ data, device }) => {
@@ -69,6 +73,8 @@ mqtt.on('air_quality', async ({ data, device }) => {
     }
   ]);
   wsBroadcast('air_quality', device, airQuality);
+  prefs.check('eco2', device, airQuality.eco2);
+  prefs.check('tvoc', device, airQuality.tvoc);
 });
 
 mqtt.on('battery_level', async ({ data, device }) => {
@@ -81,4 +87,5 @@ mqtt.on('battery_level', async ({ data, device }) => {
     }
   ]);
   wsBroadcast('battery_level', device, { battery_level: batteryLevel });
+  prefs.check('battery_level', device, batteryLevel);
 });
