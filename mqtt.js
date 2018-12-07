@@ -16,7 +16,7 @@ function setupBatteryCheck() {
       client.read(device, 'battery', 'battery_level');
     });
   }, 5000);
-};
+}
 
 function onConnect() {
   log('connected');
@@ -27,7 +27,7 @@ function onConnect() {
       log(`error trying to subscribe to ${subjson}`);
     } else {
       log(`subscribed to ${subjson}`);
-      // setupBatteryCheck();
+      setupBatteryCheck();
     }
   });
 }

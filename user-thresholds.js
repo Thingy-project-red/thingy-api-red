@@ -64,6 +64,7 @@ async function check(metric, device, value) {
       if (thres.last && thres.last + timeout > Date.now()) return;
 
       // TODO: handle special case of door metric
+      // TODO: store 'last' back in DB
 
       if ('max' in thres && value > thres.max) {
         // Value above threshold
