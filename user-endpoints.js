@@ -59,23 +59,22 @@ async function deleteUser(ctx) {
 async function getUser(ctx) {
   const users = await mongo();
   const name = ctx.params.user;
-  await users.findOne({ name }, { fields: { _id: 0, hash: 0 } })
-    .then((user) => {
-      ctx.body = user;
-    })
-    .catch(err => ctx.throw(404, err));
+  const user = await users.findOne({ name }, { fields: { _id: 0, hash: 0 } });
+  if (user == null) {
+    ctx.throw(404, 'User doesn\'t exist');
+  }
+  ctx.body = user;
 }
 
 async function updateUser(ctx) {
   const users = await mongo();
   const data = ctx.request.body;
   const name = ctx.params.user;
-  await users.updateOne({ name }, { $set: data })
-    .then(() => {
-      ctx.status = 204;
-      prefs.update();
-    })
-    .catch(err => ctx.throw(404, err));
+  if ((await users.updateOne({ name }, { $set: data })).modifiedCount !== 1) {
+    ctx.throw(404, 'User doesn\'t exist');
+  }
+  ctx.status = 204;
+  prefs.update();
 }
 
 async function authenticate(ctx) {
