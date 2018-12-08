@@ -11,8 +11,8 @@ function verifyClient(info, cb) {
     // Abort if no token provided
     cb(false, 401, 'Unauthorized');
   } else {
-    jwt.verify(token, process.env.JWT_SECRET, (err) => {
-      if (err) {
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+      if (err || !decoded.rights.includes('api')) {
         cb(false, 401, 'Unauthorized');
       } else {
         cb(true);
