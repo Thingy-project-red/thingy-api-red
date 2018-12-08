@@ -43,16 +43,18 @@ function authorize(requiredRights) {
 
 router
   .post('/auth', userEndpoints.authenticate)
+  .use(jwt, authorize([]))
   .get('/users/:user', userEndpoints.getUser)
-  .use(jwt, authorize(['admin']))
+  .use(authorize(['admin']))
   .get('/users', userEndpoints.getUsers)
   .post('/users', userEndpoints.addUser)
-  .patch('/users/:user', userEndpoints.updateUser)
+  .patch('/users/:user', userEndpoints.updateUserData)
   .del('/users/:user', userEndpoints.deleteUser);
 
 
 apiRouter
   .use(jwt, authorize(['api']))
+  .patch('/users/:user/preferences', userEndpoints.updateUserPrefs)
   .get('/devices', thingyEndpoints.getDevices)
   .get('/:device/status', thingyEndpoints.getDeviceStatus)
   .get('/:device/:metric/average/:seconds', thingyEndpoints.getAvgMetricSeconds)

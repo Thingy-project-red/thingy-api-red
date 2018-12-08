@@ -59,6 +59,13 @@ async function deleteUser(ctx) {
 async function getUser(ctx) {
   const users = await mongo();
   const name = ctx.params.user;
+
+  // Only users with admin right can see other users data
+  if (ctx.state.user.sub !== name
+    && !ctx.state.user.rights.includes('admin')) {
+    ctx.throw(401);
+  }
+
   const user = await users.findOne({ name }, { fields: { _id: 0, hash: 0 } });
   if (user == null) {
     ctx.throw(404, 'User doesn\'t exist');
@@ -66,15 +73,48 @@ async function getUser(ctx) {
   ctx.body = user;
 }
 
-async function updateUser(ctx) {
-  const users = await mongo();
+async function updateUser(ctx, users) {
   const data = ctx.request.body;
   const name = ctx.params.user;
-  if ((await users.updateOne({ name }, { $set: data })).modifiedCount !== 1) {
+
+  if ('hash' in data) {
+    ctx.throw(400);
+  }
+
+  if ((await users.updateOne({ name }, { $set: data })).matchedCount !== 1) {
     ctx.throw(404, 'User doesn\'t exist');
   }
   ctx.status = 204;
   prefs.update();
+}
+
+async function updateUserData(ctx) {
+  const users = await mongo();
+  const data = ctx.request.body;
+
+  // Make sure user has all required rights
+  // Admin rights: modify name or rights
+  // API rights: modify preferences
+  if ('preferences' in data && !ctx.state.user.rights.includes('api')) {
+    ctx.throw(401);
+  }
+
+  await updateUser(ctx, users);
+}
+
+async function updateUserPrefs(ctx) {
+  const users = await mongo();
+  const data = ctx.request.body;
+
+  // Make sure user has all required rights
+  // Admin rights: modify name or rights
+  // API rights: modify preferences
+  if (('rights' in data || 'name' in data)
+    && !ctx.state.user.rights.includes('admin')) {
+    ctx.throw(401);
+  }
+
+  await updateUser(ctx, users);
 }
 
 async function authenticate(ctx) {
@@ -134,7 +174,8 @@ module.exports = {
   getUsers,
   getUser,
   addUser,
-  updateUser,
+  updateUserData,
+  updateUserPrefs,
   deleteUser,
   authenticate
 };
