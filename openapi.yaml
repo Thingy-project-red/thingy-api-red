@@ -177,7 +177,22 @@ paths:
       parameters:
         - $ref: '#/components/parameters/user'
       requestBody:
-        $ref: '#/components/requestBodies/user'
+        $ref: '#/components/requestBodies/userData'
+      responses:
+        '204':
+          $ref: '#/components/responses/Ok'
+        '404':
+          $ref: '#/components/responses/InvalidUser'
+  /users/{user}/preferences:
+    patch:
+      tags:
+        - user
+      summary: Updates user preferences
+      operationId: patchUserPrefs
+      parameters:
+        - $ref: '#/components/parameters/user'
+      requestBody:
+        $ref: '#/components/requestBodies/userPrefs'
       responses:
         '204':
           $ref: '#/components/responses/Ok'
@@ -429,6 +444,46 @@ components:
                 items:
                   type: string
                 example: [api, admin]
+    userData:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                example: Alice
+              rights:
+                type: array
+                items:
+                  type: string
+                example: [api, admin]
+              preferences:
+                type: object
+                properties:
+                  contactData:
+                    type: object
+                    example: {telegram: 12345678, email: "user@provider.tld"}
+                  thresholds:
+                    type: object
+                    example: {battery_level: {min: 20}}
+    userPrefs:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              preferences:
+                type: object
+                properties:
+                  contactData:
+                    type: object
+                    example: {telegram: 12345678, email: "user@provider.tld"}
+                  thresholds:
+                    type: object
+                    example: {battery_level: {min: 20}}
   securitySchemes:
     jwt_auth:
       type: http
