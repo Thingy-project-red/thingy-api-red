@@ -42,7 +42,7 @@ async function notify(metric, device, value, user, limit, kind) {
  *       temperature: {
  *         max: 50,
  *         min: 5,
- *         timeout: milliseconds
+ *         timeout: seconds
  *       }
  *     },
  *     contactData: {
@@ -59,9 +59,9 @@ async function check(metric, device, value) {
       if (!thres) return;
 
       // Default timeout is 60 seconds
-      const timeout = 'timeout' in thres ? thres.timeout : 60 * 1000;
+      const timeout = 'timeout' in thres ? thres.timeout : 60;
       // Cancel if notification was already triggered within timeout
-      if (thres.last && thres.last + timeout > Date.now()) return;
+      if (thres.last && thres.last + timeout * 1000 > Date.now()) return;
 
       // TODO: handle special case of door metric
       // TODO: store 'last' back in DB
