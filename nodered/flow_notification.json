@@ -72,7 +72,7 @@
     "type": "function",
     "z": "4755dd7f.5a3e84",
     "name": "stringify -> Marco",
-    "func": "msg.payload = {\n  content: JSON.stringify(msg.payload),\n  chatId: 27962764,\n  type: \"message\"\n};\n\nreturn msg;",
+    "func": "msg.payload = {\n  content: \"Error: \" + JSON.stringify(msg.payload),\n  chatId: 27962764,\n  type: \"message\"\n};\n\nreturn msg;",
     "outputs": 1,
     "noerr": 0,
     "x": 390,
@@ -109,7 +109,9 @@
     "propertyType": "msg",
     "rules": [
       {
-        "t": "nnull"
+        "t": "gte",
+        "v": "0",
+        "vt": "num"
       }
     ],
     "checkall": "true",
@@ -135,24 +137,10 @@
     "y": 360,
     "wires": [
       [
-        "42151aaf.e1c13c",
-        "8e771fc1.83e018"
+        "8e771fc1.83e018",
+        "fbb7933a.6afcc"
       ]
     ]
-  },
-  {
-    "id": "42151aaf.e1c13c",
-    "type": "debug",
-    "z": "4755dd7f.5a3e84",
-    "name": "",
-    "active": false,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "payload",
-    "x": 970,
-    "y": 320,
-    "wires": []
   },
   {
     "id": "fbb7933a.6afcc",
@@ -164,8 +152,8 @@
     "console": false,
     "tostatus": false,
     "complete": "false",
-    "x": 970,
-    "y": 440,
+    "x": 950,
+    "y": 380,
     "wires": []
   },
   {
@@ -177,8 +165,8 @@
     "secure": true,
     "name": "",
     "dname": "Gmail Sender",
-    "x": 980,
-    "y": 400,
+    "x": 960,
+    "y": 440,
     "wires": []
   },
   {
@@ -207,7 +195,9 @@
     "propertyType": "msg",
     "rules": [
       {
-        "t": "nnull"
+        "t": "cont",
+        "v": "@",
+        "vt": "str"
       }
     ],
     "checkall": "true",
@@ -227,10 +217,24 @@
     "z": "4755dd7f.5a3e84",
     "name": "Telegram Sender",
     "bot": "f2f2f916.2a37c8",
-    "x": 990,
-    "y": 360,
+    "x": 970,
+    "y": 320,
     "wires": [
       []
+    ]
+  },
+  {
+    "id": "a8ae0166.27303",
+    "type": "catch",
+    "z": "4755dd7f.5a3e84",
+    "name": "",
+    "scope": null,
+    "x": 180,
+    "y": 80,
+    "wires": [
+      [
+        "5201f6bc.1d38a"
+      ]
     ]
   },
   {
