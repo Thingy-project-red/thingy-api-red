@@ -131,7 +131,7 @@ async function authenticate(ctx) {
   if (name === process.env.USERS_ADMIN_NAME) {
     // This is the artificial admin user
     if (password !== process.env.USERS_ADMIN_PASSWORD) {
-      ctx.throw(401, 'Wrong password');
+      ctx.throw(401, 'Wrong password or username');
     }
     // Since the user doesn't exist, we need to build it
     user = {
@@ -143,14 +143,14 @@ async function authenticate(ctx) {
     const results = await users.find({ name }).toArray();
     // Check if user exists
     if (results.length === 0) {
-      ctx.throw(401, 'User doesn\'t exist');
+      ctx.throw(401, 'Wrong password or username');
     }
     // If so, get user
     [user] = results;
 
     // Compare password with salted hash
     if (!(await bcrypt.compare(password, user.hash))) {
-      ctx.throw(401, 'Wrong password');
+      ctx.throw(401, 'Wrong password or username');
     }
   }
 
