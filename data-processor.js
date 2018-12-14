@@ -31,7 +31,7 @@ mqtt.on('light_intensity', async ({ data, device }) => {
   ]);
   wsBroadcast('light_intensity', device, rgb);
   wsBroadcast('door', device, { open });
-  prefs.check('door', device, open);
+  prefs.check('door_open', device, open);
 });
 
 mqtt.on('humidity', async ({ data, device }) => {

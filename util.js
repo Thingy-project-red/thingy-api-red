@@ -52,7 +52,8 @@ const units = {
   humidity: '%',
   eco2: 'ppm',
   tvoc: 'ppb',
-  battery_level: '%'
+  battery_level: '%',
+  door_open: 's'
 };
 
 module.exports = {

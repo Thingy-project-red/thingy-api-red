@@ -3,6 +3,7 @@ const mongo = require('./mongo.js');
 const util = require('./util.js');
 
 let users = [];
+const openDoors = {};
 
 /**
  * Module keeps local copy of users with thresholds to avoid having to query
@@ -23,7 +24,7 @@ async function update() {
 async function notify(metric, device, value, user, limit, kind) {
   const unit = util.units[metric];
   const msg = `Attention ${user.name}: `
-    + `Threshold for metric '${metric}' was ${kind}!\n`
+    + `Threshold for metric '${metric.replace('_', ' ')}' was ${kind}!\n`
     + `${device}: ${value}${unit}. Threshold: ${limit}${unit}`;
 
   // Send necessary data over mqtt to node-red
@@ -63,8 +64,23 @@ async function check(metric, device, value) {
       // Cancel if notification was already triggered within timeout
       if (thres.last && thres.last + timeout * 1000 > Date.now()) return;
 
-      // TODO: handle special case of door metric
-      // TODO: store 'last' back in DB
+      // Handle special case of door metric
+      if (metric === 'door_open') {
+        if (value) {
+          // If open, calculate how long it is already open
+          if (device in openDoors) {
+            // Replace value with #seconds door is open
+            // eslint-disable-next-line no-param-reassign
+            value = Math.round((Date.now() - openDoors[device]) / 1000);
+          } else {
+            openDoors[device] = Date.now();
+            return;
+          }
+        } else {
+          delete openDoors[device];
+          return;
+        }
+      }
 
       if ('max' in thres && value > thres.max) {
         // Value above threshold
