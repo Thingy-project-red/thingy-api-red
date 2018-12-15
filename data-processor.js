@@ -3,6 +3,7 @@ const util = require('./util.js');
 const { influx } = require('./influx.js');
 const wsBroadcast = require('./websocket.js');
 const prefs = require('./user-thresholds.js');
+const led = require('./led.js');
 
 /*
  * MQTT handlers receiving and storing sensor data
@@ -88,4 +89,22 @@ mqtt.on('battery_level', async ({ data, device }) => {
   ]);
   wsBroadcast('battery_level', device, { battery_level: batteryLevel });
   prefs.check('battery_level', device, batteryLevel);
+});
+
+// Indicate battery level on button press
+// LED: green (> 40%), yellow (> 20%), and red otherwise
+mqtt.on('button', async ({ data, device }) => {
+  const pressed = data.readUInt8(0) === 1;
+  if (!pressed) return;
+
+  const rows = await influx.query(
+    `SELECT LAST(battery_level),* FROM battery_level
+    WHERE device='${device}'`
+  );
+  const level = rows[0].battery_level;
+
+  // eslint-disable-next-line no-nested-ternary
+  const color = level > 40 ? led.GREEN : level > 20 ? led.YELLOW : led.RED;
+  const buffer = led.oneShot(color);
+  mqtt.write(device, 'user_interface', 'led', buffer);
 });
