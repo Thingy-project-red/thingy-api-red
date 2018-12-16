@@ -320,7 +320,7 @@ components:
         text/plain:
           schema:
             type: string
-            example: Wrong password
+            example: Wrong password or username
     Deleted:
       description: User deleted
     Ok:
