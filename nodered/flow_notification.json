@@ -1,0 +1,272 @@
+[
+  {
+    "id": "4755dd7f.5a3e84",
+    "type": "tab",
+    "label": "Notifications",
+    "disabled": false,
+    "info": ""
+  },
+  {
+    "id": "f9ff36f4.dec0b",
+    "type": "telegram command",
+    "z": "4755dd7f.5a3e84",
+    "name": "Start command",
+    "command": "/start",
+    "bot": "f2f2f916.2a37c8",
+    "strict": false,
+    "x": 200,
+    "y": 180,
+    "wires": [
+      [
+        "7e72e7c.f1a2718"
+      ],
+      []
+    ]
+  },
+  {
+    "id": "7e72e7c.f1a2718",
+    "type": "function",
+    "z": "4755dd7f.5a3e84",
+    "name": "Welcome Message",
+    "func": "msg.payload = {\n  content: `Welcome! This is your chatId: ${msg.payload.chatId}`,\n  chatId: msg.payload.chatId,\n  type: \"message\"\n};\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "x": 470,
+    "y": 180,
+    "wires": [
+      [
+        "c32589cb.0edd68"
+      ]
+    ]
+  },
+  {
+    "id": "c32589cb.0edd68",
+    "type": "telegram sender",
+    "z": "4755dd7f.5a3e84",
+    "name": "Telegram Sender",
+    "bot": "f2f2f916.2a37c8",
+    "x": 810,
+    "y": 180,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "84b4cdb5.34b1f",
+    "type": "mqtt in",
+    "z": "4755dd7f.5a3e84",
+    "name": "",
+    "topic": "notification",
+    "qos": "2",
+    "broker": "918576c2.b441",
+    "x": 180,
+    "y": 380,
+    "wires": [
+      [
+        "6c7c132e.483424"
+      ]
+    ]
+  },
+  {
+    "id": "5201f6bc.1d38a",
+    "type": "function",
+    "z": "4755dd7f.5a3e84",
+    "name": "stringify -> Marco",
+    "func": "msg.payload = {\n  content: \"Error: \" + JSON.stringify(msg.payload),\n  chatId: 27962764,\n  type: \"message\"\n};\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "x": 390,
+    "y": 80,
+    "wires": [
+      [
+        "c32589cb.0edd68"
+      ]
+    ]
+  },
+  {
+    "id": "6c7c132e.483424",
+    "type": "json",
+    "z": "4755dd7f.5a3e84",
+    "name": "JSON.parse",
+    "property": "payload",
+    "action": "obj",
+    "pretty": false,
+    "x": 350,
+    "y": 380,
+    "wires": [
+      [
+        "584c3117.337548",
+        "6c2651c3.44341"
+      ]
+    ]
+  },
+  {
+    "id": "584c3117.337548",
+    "type": "switch",
+    "z": "4755dd7f.5a3e84",
+    "name": "Telegram check",
+    "property": "payload.contact.telegram",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "gte",
+        "v": "0",
+        "vt": "num"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 560,
+    "y": 360,
+    "wires": [
+      [
+        "6f089e2e.0b41f8"
+      ]
+    ]
+  },
+  {
+    "id": "6f089e2e.0b41f8",
+    "type": "function",
+    "z": "4755dd7f.5a3e84",
+    "name": "transform",
+    "func": "msg.payload = {\n  content: msg.payload.msg,\n  chatId: msg.payload.contact.telegram,\n  type: \"message\"\n};\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "x": 740,
+    "y": 360,
+    "wires": [
+      [
+        "8e771fc1.83e018",
+        "fbb7933a.6afcc"
+      ]
+    ]
+  },
+  {
+    "id": "fbb7933a.6afcc",
+    "type": "debug",
+    "z": "4755dd7f.5a3e84",
+    "name": "",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "false",
+    "x": 950,
+    "y": 380,
+    "wires": []
+  },
+  {
+    "id": "1407261d.0a6f1a",
+    "type": "e-mail",
+    "z": "4755dd7f.5a3e84",
+    "server": "smtp.gmail.com",
+    "port": "465",
+    "secure": true,
+    "name": "",
+    "dname": "Gmail Sender",
+    "x": 960,
+    "y": 440,
+    "wires": []
+  },
+  {
+    "id": "3ea87199.6a9d8e",
+    "type": "function",
+    "z": "4755dd7f.5a3e84",
+    "name": "transform",
+    "func": "msg.to = msg.payload.contact.email;\nmsg.subject = \"Thingy-Alert\";\nmsg.payload = msg.payload.msg;\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "x": 740,
+    "y": 400,
+    "wires": [
+      [
+        "fbb7933a.6afcc",
+        "1407261d.0a6f1a"
+      ]
+    ]
+  },
+  {
+    "id": "6c2651c3.44341",
+    "type": "switch",
+    "z": "4755dd7f.5a3e84",
+    "name": "Email check",
+    "property": "payload.contact.email",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "cont",
+        "v": "@",
+        "vt": "str"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 570,
+    "y": 400,
+    "wires": [
+      [
+        "3ea87199.6a9d8e"
+      ]
+    ]
+  },
+  {
+    "id": "8e771fc1.83e018",
+    "type": "telegram sender",
+    "z": "4755dd7f.5a3e84",
+    "name": "Telegram Sender",
+    "bot": "f2f2f916.2a37c8",
+    "x": 970,
+    "y": 320,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "a8ae0166.27303",
+    "type": "catch",
+    "z": "4755dd7f.5a3e84",
+    "name": "",
+    "scope": null,
+    "x": 180,
+    "y": 80,
+    "wires": [
+      [
+        "5201f6bc.1d38a"
+      ]
+    ]
+  },
+  {
+    "id": "f2f2f916.2a37c8",
+    "type": "telegram bot",
+    "z": "",
+    "botname": "Thingy Project Red Bot",
+    "usernames": "",
+    "chatids": "",
+    "baseapiurl": "",
+    "pollinterval": "300"
+  },
+  {
+    "id": "918576c2.b441",
+    "type": "mqtt-broker",
+    "z": "",
+    "name": "thingy-mqtt",
+    "broker": "mqtt.thing.zone",
+    "port": "1893",
+    "clientid": "",
+    "usetls": false,
+    "compatmode": true,
+    "keepalive": "60",
+    "cleansession": true,
+    "birthTopic": "",
+    "birthQos": "0",
+    "birthPayload": "",
+    "closeTopic": "",
+    "closeQos": "0",
+    "closePayload": "",
+    "willTopic": "",
+    "willQos": "0",
+    "willPayload": ""
+  }
+]

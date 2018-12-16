@@ -9,89 +9,13 @@ const logger = require('koa-logger');
 const jwt = require('koa-jwt')({ secret: process.env.JWT_SECRET });
 const req = require('require-yml');
 const koaSwagger = require('koa2-swagger-ui');
-const mqtt = require('./mqtt.js').connect();
-const util = require('./util.js');
-const { influx } = require('./influx.js');
 const thingyEndpoints = require('./thingy-endpoints.js');
 const userEndpoints = require('./user-endpoints.js');
+require('./data-processor.js');
 
 const app = new Koa();
 const router = new Router({ prefix: '/api/v1' });
 const apiRouter = new Router({ prefix: '/api/v1' });
-
-/*
- * MQTT handlers receiving and storing sensor data
- */
-
-mqtt.on('light_intensity', async ({ data, device }) => {
-  const light = {
-    red: data.readUInt16LE(0),
-    green: data.readUInt16LE(2),
-    blue: data.readUInt16LE(4),
-    clear: data.readUInt16LE(6)
-  };
-  const open = util.isDoorOpen(light);
-  const rgb = util.toRgb(light);
-  await influx.writePoints([
-    {
-      measurement: 'light_intensity',
-      fields: rgb,
-      tags: { device }
-    },
-    {
-      measurement: 'door',
-      fields: { open },
-      tags: { device }
-    }
-  ]);
-});
-
-mqtt.on('humidity', async ({ data, device }) => {
-  const humidity = data.readUInt8(0);
-  await influx.writePoints([
-    {
-      measurement: 'humidity',
-      fields: { humidity },
-      tags: { device }
-    }
-  ]);
-});
-
-mqtt.on('temperature', async ({ data, device }) => {
-  const temperature = data.readInt8(0) + (data.readUInt8(1) / 100);
-  await influx.writePoints([
-    {
-      measurement: 'temperature',
-      fields: { temperature },
-      tags: { device }
-    }
-  ]);
-});
-
-mqtt.on('air_quality', async ({ data, device }) => {
-  const airQuality = {
-    eco2: data.readUInt16LE(0),
-    tvoc: data.readUInt16LE(2)
-  };
-  await influx.writePoints([
-    {
-      measurement: 'air_quality',
-      fields: airQuality,
-      tags: { device }
-    }
-  ]);
-});
-
-mqtt.on('battery_level', async ({ data, device }) => {
-  const batteryLevel = data.readUInt8(0);
-  await influx.writePoints([
-    {
-      measurement: 'battery_level',
-      fields: { battery_level: batteryLevel },
-      tags: { device }
-    }
-  ]);
-});
 
 /*
  * Generator for middleware comparing user rights in JWT with the required ones
@@ -119,13 +43,18 @@ function authorize(requiredRights) {
 
 router
   .post('/auth', userEndpoints.authenticate)
-  .use(jwt, authorize(['admin']))
+  .use(jwt, authorize([]))
+  .get('/users/:user', userEndpoints.getUser)
+  .use(authorize(['admin']))
   .get('/users', userEndpoints.getUsers)
   .post('/users', userEndpoints.addUser)
+  .patch('/users/:user', userEndpoints.updateUserData)
   .del('/users/:user', userEndpoints.deleteUser);
+
 
 apiRouter
   .use(jwt, authorize(['api']))
+  .patch('/users/:user/preferences', userEndpoints.updateUserPrefs)
   .get('/devices', thingyEndpoints.getDevices)
   .get('/:device/status', thingyEndpoints.getDeviceStatus)
   .get('/:device/:metric/average/:seconds', thingyEndpoints.getAvgMetricSeconds)

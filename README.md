@@ -12,8 +12,7 @@ available at https://api.thingy-project-red.com/docs.
 
 ## Getting started
 1. Install Docker & Docker Compose
-2. Create and edit `.env`.
-For reference, see `.env.TEMPLATE`
+2. Create and edit `.env`. For reference, see `.env.TEMPLATE`.
 
 ## Run
 To get everything up and running, use `docker-compose up`.
@@ -40,6 +39,12 @@ For that reason, `.env` should contain the name and password of a special user
 who doesn't really exist in the DB, but will be authenticated and granted
 `admin` permission in the auth endpoint. Keep in mind that this username takes
 precedence over a user of the same name in the DB.
+
+## TLS
+The whole application is TLS-agnostic to make containerized deployments easy.
+If you want to use TLS, simply set up a reverse proxy like nginx to handle it.
+See [our configuration](https://github.com/Thingy-project-red/thingy-host)
+for an example.
 
 ## Check code with ESLint
 This project uses the

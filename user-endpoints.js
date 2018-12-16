@@ -1,8 +1,10 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const mongo = require('./mongo.js');
+const prefs = require('./user-thresholds.js');
 
-const userRights = ['admin', 'api'];
+const userRights = ['api', 'admin'];
+
 
 async function getUsers(ctx) {
   // Get MongoDB connection
@@ -25,7 +27,7 @@ async function addUser(ctx) {
   // Obtain name, password & rights
   const { name, password, rights } = ctx.request.body;
   // Make sure rights are valid
-  if (!rights.every(x => userRights.includes(x)) || rights.length === 0) {
+  if (!rights.every(x => userRights.includes(x))) {
     ctx.throw(400, 'Invalid user rights');
   }
   // Check if user doesn't exist yet
@@ -40,6 +42,7 @@ async function addUser(ctx) {
 
   // Return representation of created user (without password hash)
   ctx.body = { name, rights };
+  prefs.update();
 }
 
 async function deleteUser(ctx) {
@@ -50,6 +53,68 @@ async function deleteUser(ctx) {
     ctx.throw(404, 'User doesn\'t exist');
   }
   ctx.status = 204;
+  prefs.update();
+}
+
+async function getUser(ctx) {
+  const users = await mongo();
+  const name = ctx.params.user;
+
+  // Only users with admin right can see other users data
+  if (ctx.state.user.sub !== name
+    && !ctx.state.user.rights.includes('admin')) {
+    ctx.throw(401);
+  }
+
+  const user = await users.findOne({ name }, { fields: { _id: 0, hash: 0 } });
+  if (user == null) {
+    ctx.throw(404, 'User doesn\'t exist');
+  }
+  ctx.body = user;
+}
+
+async function updateUser(ctx, users) {
+  const data = ctx.request.body;
+  const name = ctx.params.user;
+
+  if ('hash' in data) {
+    ctx.throw(400);
+  }
+
+  if ((await users.updateOne({ name }, { $set: data })).matchedCount !== 1) {
+    ctx.throw(404, 'User doesn\'t exist');
+  }
+  ctx.status = 204;
+  prefs.update();
+}
+
+async function updateUserData(ctx) {
+  const users = await mongo();
+  const data = ctx.request.body;
+
+  // Make sure user has all required rights
+  // Admin rights: modify name or rights
+  // API rights: modify preferences
+  if ('preferences' in data && !ctx.state.user.rights.includes('api')) {
+    ctx.throw(401);
+  }
+
+  await updateUser(ctx, users);
+}
+
+async function updateUserPrefs(ctx) {
+  const users = await mongo();
+  const data = ctx.request.body;
+
+  // Make sure user has all required rights
+  // Admin rights: modify name or rights
+  // API rights: modify preferences
+  if (('rights' in data || 'name' in data)
+    && !ctx.state.user.rights.includes('admin')) {
+    ctx.throw(401);
+  }
+
+  await updateUser(ctx, users);
 }
 
 async function authenticate(ctx) {
@@ -66,26 +131,26 @@ async function authenticate(ctx) {
   if (name === process.env.USERS_ADMIN_NAME) {
     // This is the artificial admin user
     if (password !== process.env.USERS_ADMIN_PASSWORD) {
-      ctx.throw(401, 'Wrong password');
+      ctx.throw(401, 'Wrong password or username');
     }
     // Since the user doesn't exist, we need to build it
     user = {
       name,
-      rights: ['admin', 'api']
+      rights: ['api', 'admin']
     };
   } else {
     // Fetch user from DB
     const results = await users.find({ name }).toArray();
     // Check if user exists
     if (results.length === 0) {
-      ctx.throw(401, 'User doesn\'t exist');
+      ctx.throw(401, 'Wrong password or username');
     }
     // If so, get user
     [user] = results;
 
     // Compare password with salted hash
     if (!(await bcrypt.compare(password, user.hash))) {
-      ctx.throw(401, 'Wrong password');
+      ctx.throw(401, 'Wrong password or username');
     }
   }
 
@@ -107,7 +172,10 @@ async function authenticate(ctx) {
 
 module.exports = {
   getUsers,
+  getUser,
   addUser,
+  updateUserData,
+  updateUserPrefs,
   deleteUser,
   authenticate
 };
